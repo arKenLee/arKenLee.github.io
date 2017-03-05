@@ -87,19 +87,30 @@
 
 
 
-<meta name="description" content="Runtime在上一篇消息机制中讲了 Objective-C 的消息发送机制，这篇文章将讲解向对象调用一个未实现的方法时，Objective-C 的消息转发。
-消息转发">
+<meta name="description" content="介绍在上一篇消息发送讲了 Objective-C 的消息发送机制。向对象发送消息时，根据对象的 isa 指针找到所属的类，在类的 methodList 查找对应的方法实现，如果没找到则向父类的 methodList 继续查找。
+但如果一直找到根类都没有找到对应的方法会怎样呢？对象调用一个未实现的方法时，并不会因为找不到对应的方法而立即崩溃，而是先经历三个阶段：
+
+动态方法解析阶段
+备援接收者转发阶">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Runtime - Message Forwarding">
 <meta property="og:url" content="https://arKenLee.github.io/2017/02/26/Message-Forwarding/index.html">
 <meta property="og:site_name" content="Ken’s Notes">
-<meta property="og:description" content="Runtime在上一篇消息机制中讲了 Objective-C 的消息发送机制，这篇文章将讲解向对象调用一个未实现的方法时，Objective-C 的消息转发。
-消息转发">
-<meta property="og:updated_time" content="2017-02-27T05:05:38.000Z">
+<meta property="og:description" content="介绍在上一篇消息发送讲了 Objective-C 的消息发送机制。向对象发送消息时，根据对象的 isa 指针找到所属的类，在类的 methodList 查找对应的方法实现，如果没找到则向父类的 methodList 继续查找。
+但如果一直找到根类都没有找到对应的方法会怎样呢？对象调用一个未实现的方法时，并不会因为找不到对应的方法而立即崩溃，而是先经历三个阶段：
+
+动态方法解析阶段
+备援接收者转发阶">
+<meta property="og:image" content="https://arKenLee.github.io/2017/02/26/Message-Forwarding/message_forwarding.png">
+<meta property="og:updated_time" content="2017-03-05T16:54:22.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Runtime - Message Forwarding">
-<meta name="twitter:description" content="Runtime在上一篇消息机制中讲了 Objective-C 的消息发送机制，这篇文章将讲解向对象调用一个未实现的方法时，Objective-C 的消息转发。
-消息转发">
+<meta name="twitter:description" content="介绍在上一篇消息发送讲了 Objective-C 的消息发送机制。向对象发送消息时，根据对象的 isa 指针找到所属的类，在类的 methodList 查找对应的方法实现，如果没找到则向父类的 methodList 继续查找。
+但如果一直找到根类都没有找到对应的方法会怎样呢？对象调用一个未实现的方法时，并不会因为找不到对应的方法而立即崩溃，而是先经历三个阶段：
+
+动态方法解析阶段
+备援接收者转发阶">
+<meta name="twitter:image" content="https://arKenLee.github.io/2017/02/26/Message-Forwarding/message_forwarding.png">
 
 
 
@@ -346,8 +357,71 @@
       
 
       
-        <h2 id="Runtime"><a href="#Runtime" class="headerlink" title="Runtime"></a>Runtime</h2><p>在上一篇<a href="http">消息机制</a>中讲了 Objective-C 的消息发送机制，这篇文章将讲解向对象调用一个未实现的方法时，Objective-C 的消息转发。</p>
-<h2 id="消息转发"><a href="#消息转发" class="headerlink" title="消息转发"></a>消息转发</h2>
+        <h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>在上一篇<a href="https://arkenlee.github.io/2017/02/25/Messaging/">消息发送</a>讲了 Objective-C 的消息发送机制。向对象发送消息时，根据对象的 <code>isa</code> 指针找到所属的类，在类的 <code>methodList</code> 查找对应的方法实现，如果没找到则向父类的 <code>methodList</code> 继续查找。</p>
+<p>但如果一直找到根类都没有找到对应的方法会怎样呢？对象调用一个未实现的方法时，并不会因为找不到对应的方法而立即崩溃，而是先经历三个阶段：</p>
+<ol>
+<li>动态方法解析阶段</li>
+<li>备援接收者转发阶段</li>
+<li>完整的消息转发阶段</li>
+</ol>
+<p>如果经过这三个阶段后依旧没能响应方法，那么系统将会执行 <code>doesNotRecognizeSelector:</code> 方法，并抛出异常。</p>
+<h2 id="动态方法解析"><a href="#动态方法解析" class="headerlink" title="动态方法解析"></a>动态方法解析</h2><p>当对象调用一个未实现的方法时，runtime 会先尝试调用下面的两个方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">+ (<span class="built_in">BOOL</span>)resolveClassMethod:(SEL)sel;</div><div class="line">+ (<span class="built_in">BOOL</span>)resolveInstanceMethod:(SEL)sel;</div></pre></td></tr></table></figure>
+<p>如果当前执行的方法是实例方法会调用 <code>resolveInstanceMethod:</code> ，如果是类方法则调用 <code>resolveClassMethod:</code> 。在这两个方法中添加要决定的自定义方法实现，并且当返回 <code>YES</code> 时，runtime 会重新启动一次消息发送的过程。</p>
+<p>例如现在有一个 <code>MessageHandler</code> 类，该类有一个实例方法 <code>sendMessage:toReceiver:</code> ，但是在该类的实现中没有对应的方法实现。下面是该类的接口：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">MessageHandler</span> : <span class="title">NSObject</span></span></div><div class="line">- (<span class="keyword">void</span>)sendMessage:(<span class="built_in">NSString</span> *)message toReceiver:(MessageHandler *)receiver;</div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>我们知道在 Objective-C 中发送消息，最终会转为 C 语言的 <code>objc_msgSend(receiver, selector, arg1, arg2, …)</code> ，类似的我们也可以自定义一个 C 级别的动态方法实现，并通过 runtime 的 <code>class_addMethod</code> 将方法实现动态添加到类中。</p>
+<blockquote>
+<p>使用 <code>class_addMethod</code> 函数将会重写父类的方法，但不会改变当前类的现有方法。如果需要改变当前类中的现有方法，可以使用 <code>method_setImplementation</code> 。</p>
+</blockquote>
+<h3 id="编写动态方法实现函数"><a href="#编写动态方法实现函数" class="headerlink" title="编写动态方法实现函数"></a>编写动态方法实现函数</h3><p>动态方法实现至少需要两个参数：self 和 _cmd。这两个参数是上一篇文章提到的“隐藏”参数。除此之外的参数是方法实现真正需要的参数。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 接口：- (void)sendMessage:(NSString *)message toReceiver:(MessageHandler *)receiver;</span></div><div class="line"><span class="comment">// 动态方法实现</span></div><div class="line"><span class="keyword">void</span> dynamicSendMessageToReceiver(<span class="keyword">id</span> <span class="keyword">self</span>, SEL _cmd, <span class="built_in">NSString</span> *message, MessageHandler *receiver)</div><div class="line">&#123;</div><div class="line">    <span class="comment">// ...</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="重写消息解析方法"><a href="#重写消息解析方法" class="headerlink" title="重写消息解析方法"></a>重写消息解析方法</h3><p>在 <code>resolveInstanceMethod:</code> 方法中判断如果是 <code>sendMessage:toReceiver:</code> 则动态添加方法实现，如果不是则调用父类的方法。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">MessageHandler</span></span></div><div class="line"></div><div class="line">+ (<span class="built_in">BOOL</span>)resolveInstanceMethod:(SEL)sel</div><div class="line">&#123;</div><div class="line">    <span class="keyword">if</span> (sel == <span class="keyword">@selector</span>(sendMessage:toReceiver:)) &#123;</div><div class="line">        class_addMethod([<span class="keyword">self</span> <span class="keyword">class</span>], sel, (IMP)dynamicSendMessageToReceiver, <span class="string">"v@:@@"</span>);</div><div class="line">        <span class="keyword">return</span> <span class="literal">YES</span>;</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">return</span> [<span class="keyword">super</span> resolveInstanceMethod:sel];</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p><code>class_addMethod</code> 函数接收四个参数：待添加方法的类、方法名、方法实现指针、方法实现的类型编码（包括返回值编码和参数编码）。</p>
+<p> <code>&quot;v@:@@&quot;</code> 是该方法实现的类型编码。其中 <code>v</code> 表示该方法返回类型是 <code>void</code> 。 <code>@:@@</code> 表示接收四个参数，前两个参数即“隐藏”参数—— <code>self</code> 和 <code>_cmd</code> ，类型是对象类型（id）和方法选择器（SEL）；后两个参数都是对象类型，是 <code>sendMessage:toReceiver:</code> 真正需要的参数。</p>
+<blockquote>
+<p>类型编码的详细描述可参考：<a href="https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html#//apple_ref/doc/uid/TP40008048-CH100-SW1" target="_blank" rel="external">Type Encodings</a> </p>
+</blockquote>
+<h3 id="动态添加方法与内省"><a href="#动态添加方法与内省" class="headerlink" title="动态添加方法与内省"></a>动态添加方法与内省</h3><p>当类通过 <code>class_addMethod</code> 动态添加方法实现后，对实例调用 <code>respondsToSelector:</code> 或者对类调用 <code>instancesRespondToSelector:</code> 均会返回 <code>YES</code> 。</p>
+<h2 id="消息转发"><a href="#消息转发" class="headerlink" title="消息转发"></a>消息转发</h2><p>当方法没有对应的方法实现，也没有进行动态方法解析则会触发消息转发机制。</p>
+<p>消息转发分为两个阶段：</p>
+<ol>
+<li>备援接收者转发阶段</li>
+<li>完整的消息转发</li>
+</ol>
+<p>如果响应了备援接收者转发，那么将忽略后面的完整消息转发。如果备援接收者转发和完整消息转发都不能响应方法，那么最后会执行 <code>doesNotRecognizeSelector:</code> 并抛出异常。</p>
+<h3 id="备援接收者转发"><a href="#备援接收者转发" class="headerlink" title="备援接收者转发"></a>备援接收者转发</h3><p>以刚才的 <code>MessageHandler</code> 为例，当调用 <code>sendMessage:toReceiver:</code> 方法系统没能找到方法实现时，如果重写了 <code>forwardingTargetForSelector:</code> 方法，那么系统就会在运行时调用这个方法进行备援接收者转发。</p>
+<p>该方法返回一个 <code>id</code> 类型的对象，表示系统将会把这个消息转发给其他对象处理。只要这个方法返回的不是 <code>nil</code> 或 <code>self</code> ，也会重新启动一次消息发送的过程。</p>
+<p>假设 <code>MessageHelper</code> 类已经实现了 <code>sendMessage:toReceiver:</code> 方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">MessageHelper</span> : <span class="title">NSObject</span></span></div><div class="line">- (<span class="keyword">void</span>)sendMessage:(<span class="built_in">NSString</span> *)message toReceiver:(MessageHandler *)receiver;</div><div class="line"><span class="keyword">@end</span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">MessageHelper</span></span></div><div class="line">- (<span class="keyword">void</span>)sendMessage:(<span class="built_in">NSString</span> *)message toReceiver:(MessageHandler *)receiver </div><div class="line">&#123;</div><div class="line">    <span class="comment">// ...</span></div><div class="line">&#125;</div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p> <code>MessageHandler</code> 重写 <code>forwardingTargetForSelector:</code> ，实例对象在调用 <code>sendMessage:toReceiver:</code> 时借由 <code>MessageHelper</code> 类实例处理：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">id</span>)forwardingTargetForSelector:(SEL)aSelector</div><div class="line">&#123;</div><div class="line">    <span class="keyword">if</span> (aSelector == <span class="keyword">@selector</span>(sendMessage:toReceiver:)) &#123;</div><div class="line">        <span class="keyword">return</span> [[MessageHelper alloc] init];</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">return</span> [<span class="keyword">super</span> forwardingTargetForSelector:aSelector];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="完整的消息转发"><a href="#完整的消息转发" class="headerlink" title="完整的消息转发"></a>完整的消息转发</h3><p>在进行完整的消息转发时，系统会先调用 <code>methodSignatureForSelector</code> 返回一个方法签名，用来获取方法的参数和返回值。</p>
+<p>如果该方法返回 <code>nil</code> ，那么系统将会执行 <code>doesNotRecognizeSelector:</code> 抛出异常 <code>unrecognized selector sent to instance</code> ；如果该方法返回一个合法的方法签名，系统会创建一个 <code>NSInvocation</code> 对象并调用 <code>forwardInvocation:</code> 方法进行消息转发。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 返回方法签名</span></div><div class="line">- (<span class="built_in">NSMethodSignature</span> *)methodSignatureForSelector:(SEL)aSelector </div><div class="line">&#123;</div><div class="line">    <span class="built_in">NSMethodSignature</span> *methodSignature = [<span class="keyword">super</span> methodSignatureForSelector:aSelector];</div><div class="line">    <span class="keyword">if</span> (methodSignature == <span class="literal">nil</span>) &#123;</div><div class="line">        methodSignature = [<span class="built_in">NSMethodSignature</span> signatureWithObjCTypes:<span class="string">"v@:@@"</span>];</div><div class="line">    &#125;</div><div class="line">  </div><div class="line">    <span class="keyword">return</span> methodSignature;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// 消息转发</span></div><div class="line">- (<span class="keyword">void</span>)forwardInvocation:(<span class="built_in">NSInvocation</span> *)anInvocation</div><div class="line">&#123;</div><div class="line">    MessageHelper *helper = [[MessageHelper alloc] init];</div><div class="line">    </div><div class="line">    <span class="keyword">if</span> ([helper respondsToSelector:anInvocation.selector]) &#123;</div><div class="line">        [anInvocation invokeWithTarget:helper];</div><div class="line">    &#125; <span class="keyword">else</span> &#123;</div><div class="line">        [<span class="keyword">super</span> forwardInvocation:anInvocation];</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>当进入 <code>forwardInvocation:</code> 时，即使在该方法中不做任何事情，程序也不会崩溃，系统只是把消息转发到该处，至于后续的操作并不关心。</p>
+<h3 id="消息转发与内省"><a href="#消息转发与内省" class="headerlink" title="消息转发与内省"></a>消息转发与内省</h3><p>当通过消息转发让实例对象处理对应的消息时，由于在实例对象所属类的方法调度列表中找不到对应的方法实现，所以调用 <code>respondsToSelector:</code> 或者对类调用 <code>instancesRespondToSelector:</code> 会返回 <code>NO</code>。但是可以通过重写这些方法保证对外接口的统一。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">- (<span class="built_in">BOOL</span>)respondsToSelector:(SEL)aSelector</div><div class="line">&#123;</div><div class="line">    <span class="keyword">if</span> ( [<span class="keyword">super</span> respondsToSelector:aSelector] )</div><div class="line">        <span class="keyword">return</span> <span class="literal">YES</span>;</div><div class="line">    <span class="keyword">else</span> &#123;</div><div class="line">        <span class="keyword">if</span> (aSelector == <span class="keyword">@selector</span>(sendMessage:toReceiver:) &amp;&amp;</div><div class="line">            [MessageHelper instancesRespondToSelector:<span class="keyword">@selector</span>(aSelector)]) &#123;</div><div class="line">            <span class="keyword">return</span> <span class="literal">YES</span>;</div><div class="line">        &#125;</div><div class="line">        <span class="comment">// 其他判断...</span></div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="literal">NO</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>向对象发送不能处理的消息时，系统在类缓存以及方法调度表中找不到对应的方法实现，此时并不会立即崩溃，而是提供三种方式决定方法的最终调度：</p>
+<ol>
+<li>在崩溃前系统将进行动态方法解析，如果对象所属的类重写了 <code>resolveInstanceMethod:</code> 或 <code>resolveClassMethod:</code> 方法，那么可以在这些方法中利用 <code>class_addMethod</code> 动态添加方法。</li>
+<li>如果在动态方法解析后仍不能响应，那么将进入备援接收者转发阶段，通过 <code>forwardingTargetForSelector:</code> 方法将消息转交给其他对象处理。</li>
+<li>如果 <code>forwardingTargetForSelector:</code> 返回 <code>nil</code> 那么将进入完整的消息转发阶段。系统先调用 <code>methodSignatureForSelector:</code> 返回一个方法签名，用来获取方法的参数和返回值。如果该方法返回一个合法的方法签名，系统会创建一个 <code>NSInvocation</code> 对象并调用 <code>forwardInvocation:</code> 方法进行消息转发。如果该方法返回 <code>nil</code>，将会执行 <code>doesNotRecognizeSelector:</code> 并抛出异常。</li>
+</ol>
+<img src="/2017/02/26/Message-Forwarding/message_forwarding.png" alt="消息转发" title="消息转发">
+<p>三种方式比较：</p>
+<ul>
+<li>动态方法解析：在运行时提供动态添加方法时机，与消息转发机制相比更简单，适合在原始类中扩展功能；</li>
+<li>备援接收者转发：与完整的消息转发相比更简单、更迅速，可以将消息转发给其他对象处理，但转发对象数量仅限一个；</li>
+<li>完整消息转发：与备援接收者转发更复杂，但可以将消息转发给多个对象，可以模拟多继承效果。</li>
+</ul>
+<p>消息转发的步骤越往后，其代价越大。如果消息在动态方法解析阶段就能处理，那么在运行期系统就会将方法缓存起来，下次调用的时候就直接调用方法，而不触发消息转发。如果进入到消息转发阶段，消息能被备援接收者处理，就无需创建完整的 <code>NSInvocation</code> ，令消息处理过程更为简单。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtDynamicResolution.html#//apple_ref/doc/uid/TP40008048-CH102-SW1" target="_blank" rel="external">[1] Objective-C Runtime Programming Guide - Dynamic Method Resolution</a></p>
+<p><a href="https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtForwarding.html#//apple_ref/doc/uid/TP40008048-CH105-SW1" target="_blank" rel="external">[2] Objective-C Runtime Programming Guide - Message Forwarding</a></p>
+<p><a href="https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html#//apple_ref/doc/uid/TP40008048-CH100-SW1" target="_blank" rel="external">[3] Objective-C Runtime Programming Guide - Type Encodings</a></p>
+<p>[4] Matt Galloway. Effective Objective-C 2.0 编写高质量 iOS 与 OS X 代码的 52 个有效方法（爱飞翔 译）[M]. 北京: 机械工业出版社, 2014.</p>
+
       
     </div>
 
@@ -392,6 +466,10 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/03/05/Associated-Object-Method-Swizzling/" rel="prev" title="Associated Object & Method Swizzling">
+                Associated Object & Method Swizzling <i class="fa fa-chevron-right"></i>
+              </a>
             
           </div>
         </div>
@@ -463,7 +541,7 @@
           
             <div class="site-state-item site-state-posts">
               <a href="/archives">
-                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-count">3</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -527,7 +605,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Runtime"><span class="nav-number">1.</span> <span class="nav-text">Runtime</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#消息转发"><span class="nav-number">2.</span> <span class="nav-text">消息转发</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#介绍"><span class="nav-number">1.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#动态方法解析"><span class="nav-number">2.</span> <span class="nav-text">动态方法解析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#编写动态方法实现函数"><span class="nav-number">2.1.</span> <span class="nav-text">编写动态方法实现函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#重写消息解析方法"><span class="nav-number">2.2.</span> <span class="nav-text">重写消息解析方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#动态添加方法与内省"><span class="nav-number">2.3.</span> <span class="nav-text">动态添加方法与内省</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#消息转发"><span class="nav-number">3.</span> <span class="nav-text">消息转发</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#备援接收者转发"><span class="nav-number">3.1.</span> <span class="nav-text">备援接收者转发</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#完整的消息转发"><span class="nav-number">3.2.</span> <span class="nav-text">完整的消息转发</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#消息转发与内省"><span class="nav-number">3.3.</span> <span class="nav-text">消息转发与内省</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">5.</span> <span class="nav-text">参考</span></a></li></ol></div>
             
 
           </div>

@@ -247,6 +247,199 @@
   
 
   <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="https://arKenLee.github.io/2017/03/05/Associated-Object-Method-Swizzling/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Lee">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/icon.JPG">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ken’s Notes">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
+                <a class="post-title-link" href="/2017/03/05/Associated-Object-Method-Swizzling/" itemprop="url">
+                  Associated Object & Method Swizzling
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-03-05T17:59:56+08:00">
+                2017-03-05
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Objective-C/" itemprop="url" rel="index">
+                    <span itemprop="name">Objective-C</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>在 runtime 的实际应用中，<strong>关联对象</strong>再常见不过了，它提供一种“键—对象”形式的存取机制，在不改变源码的情况下，达到在运行时为类添加“成员变量”的目的。通过关联对象还可以解决在分类中不能为类添加新成员变量的问题。</p>
+<p>除了关联对象，runtime 运用较多的就是<strong>方法调配</strong>，通过<strong>方法调配</strong>可以互相交换两个方法的实现（IMP）。</p>
+<h2 id="关联对象（Associated-Object）"><a href="#关联对象（Associated-Object）" class="headerlink" title="关联对象（Associated Object）"></a>关联对象（Associated Object）</h2><p><strong>关联对象</strong>可以为指定的实例对象关联多个其他对象，这些对象将通过不同的“键”（ <code>void</code> 类型的指针）来区分。<strong>关联对象</strong>涉及三个函数，这些函数都可以在 <code>objc/runtime.h</code> 中找到定义：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 存储关联对象</span></div><div class="line"><span class="keyword">void</span> objc_setAssociatedObject(<span class="keyword">id</span> object, <span class="keyword">const</span> <span class="keyword">void</span> *key, <span class="keyword">id</span> value, objc_AssociationPolicy policy);</div><div class="line"></div><div class="line"><span class="comment">// 获取关联对象</span></div><div class="line"><span class="keyword">id</span> objc_getAssociatedObject(<span class="keyword">id</span> object, <span class="keyword">const</span> <span class="keyword">void</span> *key);</div><div class="line"></div><div class="line"><span class="comment">// 移除关联对象</span></div><div class="line"><span class="keyword">void</span> objc_removeAssociatedObjects(<span class="keyword">id</span> object);</div></pre></td></tr></table></figure>
+<p>在存储关联对象时，可以通过指定的存储策略枚举值来维护类似 @property 属性相应的内存管理语义：</p>
+<table>
+<thead>
+<tr>
+<th>关联类型</th>
+<th>等效的 @property 属性</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>OBJC_ASSOCIATION_ASSIGN</td>
+<td>assign</td>
+</tr>
+<tr>
+<td>OBJC_ASSOCIATION_RETAIN_NONATOMIC</td>
+<td>nonatomic, retain</td>
+</tr>
+<tr>
+<td>OBJC_ASSOCIATION_COPY_NONATOMIC</td>
+<td>nonatomic, copy</td>
+</tr>
+<tr>
+<td>OBJC_ASSOCIATION_RETAIN</td>
+<td>retain</td>
+</tr>
+<tr>
+<td>OBJC_ASSOCIATION_COPY</td>
+<td>copy</td>
+</tr>
+</tbody>
+</table>
+<p>设置关联对象时，如果希望完全相同的指针才能匹配得到同一个值，那么通常的做法是使用静态全局变量作为“键”。例如：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">static</span> <span class="keyword">void</span> *kExtraValKey = &amp;kExtraValKey;</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">MyClass</span> (<span class="title">Extra</span>)</span></div><div class="line">  </div><div class="line">- (<span class="keyword">void</span>)setExtraVal:(<span class="keyword">id</span>)val </div><div class="line">&#123;</div><div class="line">    <span class="comment">// 通过 kExtraValKey 关联额外变量</span></div><div class="line">    objc_setAssociatedObject(<span class="keyword">self</span>, kExtraValKey, val,  OBJC_ASSOCIATION_RETAIN_NONATOMIC);</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (<span class="keyword">id</span>)extraVal </div><div class="line">&#123;</div><div class="line">    <span class="comment">// 通过 kExtraValKey 获取额外变量</span></div><div class="line">    <span class="keyword">return</span> objc_getAssociatedObject(<span class="keyword">self</span>, kExtraValKey);</div><div class="line">&#125;</div><div class="line">  </div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>在<a href="https://arkenlee.github.io/2017/02/25/Messaging/">消息发送</a>中提到，<code>SEL</code> 是结构体 <code>objc_selector</code> 指针的别名： </p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">typedef</span> <span class="keyword">struct</span> objc_selector *SEL;</div></pre></td></tr></table></figure>
+<p>每个 <code>SEL</code> 在 runtime 中都是唯一的，因此也可以使用 <code>SEL</code> 作为“键”，从而节省了额外声明静态全局变量，例如：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">MyClass</span> (<span class="title">Extra</span>)</span></div><div class="line">  </div><div class="line">- (<span class="keyword">void</span>)setExtraVal:(<span class="keyword">id</span>)val </div><div class="line">&#123;</div><div class="line">    <span class="comment">// 通过 @selector(extraVal) 关联额外变量</span></div><div class="line">    objc_setAssociatedObject(<span class="keyword">self</span>, <span class="keyword">@selector</span>(extraVal), val,  OBJC_ASSOCIATION_RETAIN_NONATOMIC);</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (<span class="keyword">id</span>)extraVal </div><div class="line">&#123;</div><div class="line">    <span class="comment">// 每个方法中都有一个隐藏参数 _cmd 引用当前方法的 selector</span></div><div class="line">    <span class="comment">// 因此也可以通过 _cmd 即 @selector(extraVal) 获取额外变量</span></div><div class="line">    <span class="keyword">return</span> objc_getAssociatedObject(<span class="keyword">self</span>, _cmd);</div><div class="line">&#125;</div><div class="line"></div><div class="line"></div><div class="line">- (<span class="built_in">NSMutableArray</span>&lt;<span class="built_in">NSString</span> *&gt; *)extraTags </div><div class="line">&#123;</div><div class="line">    <span class="built_in">NSMutableArray</span> *tags = objc_getAssociatedObject(<span class="keyword">self</span>, _cmd);</div><div class="line">    </div><div class="line">    <span class="keyword">if</span> (tags == <span class="literal">nil</span>) &#123;</div><div class="line">        tags = [<span class="built_in">NSMutableArray</span> array];</div><div class="line">        objc_setAssociatedObject(<span class="keyword">self</span>, _cmd, tags, OBJC_ASSOCIATION_RETAIN_NONATOMIC);</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">return</span> tags;</div><div class="line">&#125;</div><div class="line">  </div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>当一个对象被释放时，系统内部会自动调用 <code>objc_removeAssociatedObjects</code> 函数移除所有的关联对象。当然如果希望在恰当的时机提前移除，也可以自行调用该函数。</p>
+<blockquote>
+<p>在<a href="http://blog.leichunfeng.com/blog/2015/06/26/objective-c-associated-objects-implementation-principle/" target="_blank" rel="external">Objective-C Associated Objects 的实现原理</a>中有详细说明 runtime 是如何管理关联对象。</p>
+</blockquote>
+<h2 id="方法调配（Method-Swizzling）"><a href="#方法调配（Method-Swizzling）" class="headerlink" title="方法调配（Method Swizzling）"></a>方法调配（Method Swizzling）</h2><p>在<a href="https://arkenlee.github.io/2017/02/25/Messaging/">消息发送</a>中提到，在方法调度表中通过 <code>selector</code> 查找到对应的方法实现（即函数指针 <code>IMP</code> ），然后调用 <code>IMP</code> 来实现方法调用。</p>
+<p>因此我们可以理解为每个 <code>selector</code> 都映射到了指定的 <code>IMP</code> ，而通过 runtime 的一些方法交换两个已有的方法实现则称作<strong>方法调配</strong>（没找到比较统一的译名，这里暂时用 【Effective Objective-C 2.0 编写高质量 iOS 与 OS X 代码的52个有效方法】的译名）。</p>
+<p>有时候希望在既有类的方法中统一添加某些操作，例如打印一些日志信息，但又不想在每次调用方法的代码后面加上日志信息操作代码，也不想通过继承的方式去重写原有的方法。那么可以先添加一个带有日志信息的方法，然后通过方法调配与原有的方法进行交换，可以优雅而简洁的解决这个问题。</p>
+<p>例如在 <code>NSString</code> 中有一个将字符串转为小写的方法 <code>lowercaseString</code> ，我希望字符串在转为小写的同时能输出原有的字符串的比较信息，那么可以为 <code>NSString</code> 添加一个分类，自定义一个能输出比较信息的转小写方法，然后在 <code>load</code> 方法中交换它们：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#import <span class="meta-string">"NSString+Add.h"</span></span></div><div class="line"><span class="meta">#import <span class="meta-string">&lt;objc/runtime.h&gt;</span></span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">NSString</span> (<span class="title">Add</span>)</span></div><div class="line"></div><div class="line">+ (<span class="keyword">void</span>)load &#123;</div><div class="line">    <span class="keyword">static</span> <span class="built_in">dispatch_once_t</span> onceToken;</div><div class="line">    <span class="built_in">dispatch_once</span>(&amp;onceToken, ^&#123;</div><div class="line">        Method orgMethodImp = class_getInstanceMethod(<span class="keyword">self</span>, <span class="keyword">@selector</span>(lowercaseString));</div><div class="line">        Method dstMethodImp = class_getInstanceMethod(<span class="keyword">self</span>, <span class="keyword">@selector</span>(myLowercaseString));</div><div class="line">        method_exchangeImplementations(orgMethodImp, dstMethodImp);</div><div class="line">    &#125;);</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (<span class="built_in">NSString</span> *)myLowercaseString &#123;</div><div class="line">    <span class="built_in">NSString</span> *lowercaseStr = [<span class="keyword">self</span> myLowercaseString];</div><div class="line">    <span class="built_in">NSLog</span>(<span class="string">@"%@ -&gt; %@"</span>, <span class="keyword">self</span>, lowercaseStr);  <span class="comment">// 输出比较信息</span></div><div class="line">    <span class="keyword">return</span> lowercaseStr;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>这里在 <code>myLowercaseString</code> 中调用了 <code>myLowercaseString</code> 方法并不会造成死循环，这是因为在运行期 <code>myLowercaseString</code> 的 <code>IMP</code> 实际上对应的是原来的 <code>lowercaseString</code> 的 <code>IMP</code> ，因此这里调用的方法实际上还是原来的转小写方法，并不会造成死循环。</p>
+<h3 id="为什么在-load-方法中交换，并且在-dispatch-once-中执行？"><a href="#为什么在-load-方法中交换，并且在-dispatch-once-中执行？" class="headerlink" title="为什么在 load 方法中交换，并且在 dispatch_once 中执行？"></a>为什么在 <code>load</code> 方法中交换，并且在 <code>dispatch_once</code> 中执行？</h3><p>在程序加载时，系统将每个类加载到内存中分配空间，此时优先将类定义中的方法添加到方法调度表（methodList）中，而类别中的方法是后添加（<em>各类别的添加顺序与.m文件连接顺序有关，可在项目工程的 Targets -&gt; Build Phases 的 Compile Sources 中查看文件顺序</em>），由于方法的添加采用的是头插法，因此类别的方法在”消息发送“的搜索过程中优先找到，造成类别方法会重写掉类定义的同名方法的现象。而 <code>load</code> 方法是在类加载到内存时，由 runtime 负责向类（按继承顺序递归）及类别调用，可以保证每个 <code>load</code> 方法都被调用一次。</p>
+<p>由于使用方法调配会影响该类的全局状态，因此要尽量避免出现冲突或者遗漏的情况。在 <code>load</code> 方法中进行方法调配可以确保方法交换不会遗漏，在 <code>load</code> 方法中使用 GCD 的 <code>dispatch_once</code> 确保该段方法调配仅执行一次，保证方法交换的一致性。</p>
+<h3 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h3><p>方法调配固然强大，但是这种”黑魔法“有一些潜在危险，如果使用得当可以让代码有质的飞跃，如果使用不当则会产生无法预知的后果。由于方法调配牵一发而动全身，如果滥用该特性会令代码变得不易理解且难以维护，还会有”方法命名重复“的问题，因此在使用方法调配要十分谨慎。</p>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
     <link itemprop="mainEntityOfPage" href="https://arKenLee.github.io/2017/02/26/Message-Forwarding/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -346,8 +539,71 @@
       
         
           
-            <h2 id="Runtime"><a href="#Runtime" class="headerlink" title="Runtime"></a>Runtime</h2><p>在上一篇<a href="http">消息机制</a>中讲了 Objective-C 的消息发送机制，这篇文章将讲解向对象调用一个未实现的方法时，Objective-C 的消息转发。</p>
-<h2 id="消息转发"><a href="#消息转发" class="headerlink" title="消息转发"></a>消息转发</h2>
+            <h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>在上一篇<a href="https://arkenlee.github.io/2017/02/25/Messaging/">消息发送</a>讲了 Objective-C 的消息发送机制。向对象发送消息时，根据对象的 <code>isa</code> 指针找到所属的类，在类的 <code>methodList</code> 查找对应的方法实现，如果没找到则向父类的 <code>methodList</code> 继续查找。</p>
+<p>但如果一直找到根类都没有找到对应的方法会怎样呢？对象调用一个未实现的方法时，并不会因为找不到对应的方法而立即崩溃，而是先经历三个阶段：</p>
+<ol>
+<li>动态方法解析阶段</li>
+<li>备援接收者转发阶段</li>
+<li>完整的消息转发阶段</li>
+</ol>
+<p>如果经过这三个阶段后依旧没能响应方法，那么系统将会执行 <code>doesNotRecognizeSelector:</code> 方法，并抛出异常。</p>
+<h2 id="动态方法解析"><a href="#动态方法解析" class="headerlink" title="动态方法解析"></a>动态方法解析</h2><p>当对象调用一个未实现的方法时，runtime 会先尝试调用下面的两个方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">+ (<span class="built_in">BOOL</span>)resolveClassMethod:(SEL)sel;</div><div class="line">+ (<span class="built_in">BOOL</span>)resolveInstanceMethod:(SEL)sel;</div></pre></td></tr></table></figure>
+<p>如果当前执行的方法是实例方法会调用 <code>resolveInstanceMethod:</code> ，如果是类方法则调用 <code>resolveClassMethod:</code> 。在这两个方法中添加要决定的自定义方法实现，并且当返回 <code>YES</code> 时，runtime 会重新启动一次消息发送的过程。</p>
+<p>例如现在有一个 <code>MessageHandler</code> 类，该类有一个实例方法 <code>sendMessage:toReceiver:</code> ，但是在该类的实现中没有对应的方法实现。下面是该类的接口：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">MessageHandler</span> : <span class="title">NSObject</span></span></div><div class="line">- (<span class="keyword">void</span>)sendMessage:(<span class="built_in">NSString</span> *)message toReceiver:(MessageHandler *)receiver;</div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>我们知道在 Objective-C 中发送消息，最终会转为 C 语言的 <code>objc_msgSend(receiver, selector, arg1, arg2, …)</code> ，类似的我们也可以自定义一个 C 级别的动态方法实现，并通过 runtime 的 <code>class_addMethod</code> 将方法实现动态添加到类中。</p>
+<blockquote>
+<p>使用 <code>class_addMethod</code> 函数将会重写父类的方法，但不会改变当前类的现有方法。如果需要改变当前类中的现有方法，可以使用 <code>method_setImplementation</code> 。</p>
+</blockquote>
+<h3 id="编写动态方法实现函数"><a href="#编写动态方法实现函数" class="headerlink" title="编写动态方法实现函数"></a>编写动态方法实现函数</h3><p>动态方法实现至少需要两个参数：self 和 _cmd。这两个参数是上一篇文章提到的“隐藏”参数。除此之外的参数是方法实现真正需要的参数。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 接口：- (void)sendMessage:(NSString *)message toReceiver:(MessageHandler *)receiver;</span></div><div class="line"><span class="comment">// 动态方法实现</span></div><div class="line"><span class="keyword">void</span> dynamicSendMessageToReceiver(<span class="keyword">id</span> <span class="keyword">self</span>, SEL _cmd, <span class="built_in">NSString</span> *message, MessageHandler *receiver)</div><div class="line">&#123;</div><div class="line">    <span class="comment">// ...</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="重写消息解析方法"><a href="#重写消息解析方法" class="headerlink" title="重写消息解析方法"></a>重写消息解析方法</h3><p>在 <code>resolveInstanceMethod:</code> 方法中判断如果是 <code>sendMessage:toReceiver:</code> 则动态添加方法实现，如果不是则调用父类的方法。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">MessageHandler</span></span></div><div class="line"></div><div class="line">+ (<span class="built_in">BOOL</span>)resolveInstanceMethod:(SEL)sel</div><div class="line">&#123;</div><div class="line">    <span class="keyword">if</span> (sel == <span class="keyword">@selector</span>(sendMessage:toReceiver:)) &#123;</div><div class="line">        class_addMethod([<span class="keyword">self</span> <span class="keyword">class</span>], sel, (IMP)dynamicSendMessageToReceiver, <span class="string">"v@:@@"</span>);</div><div class="line">        <span class="keyword">return</span> <span class="literal">YES</span>;</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">return</span> [<span class="keyword">super</span> resolveInstanceMethod:sel];</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p><code>class_addMethod</code> 函数接收四个参数：待添加方法的类、方法名、方法实现指针、方法实现的类型编码（包括返回值编码和参数编码）。</p>
+<p> <code>&quot;v@:@@&quot;</code> 是该方法实现的类型编码。其中 <code>v</code> 表示该方法返回类型是 <code>void</code> 。 <code>@:@@</code> 表示接收四个参数，前两个参数即“隐藏”参数—— <code>self</code> 和 <code>_cmd</code> ，类型是对象类型（id）和方法选择器（SEL）；后两个参数都是对象类型，是 <code>sendMessage:toReceiver:</code> 真正需要的参数。</p>
+<blockquote>
+<p>类型编码的详细描述可参考：<a href="https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html#//apple_ref/doc/uid/TP40008048-CH100-SW1" target="_blank" rel="external">Type Encodings</a> </p>
+</blockquote>
+<h3 id="动态添加方法与内省"><a href="#动态添加方法与内省" class="headerlink" title="动态添加方法与内省"></a>动态添加方法与内省</h3><p>当类通过 <code>class_addMethod</code> 动态添加方法实现后，对实例调用 <code>respondsToSelector:</code> 或者对类调用 <code>instancesRespondToSelector:</code> 均会返回 <code>YES</code> 。</p>
+<h2 id="消息转发"><a href="#消息转发" class="headerlink" title="消息转发"></a>消息转发</h2><p>当方法没有对应的方法实现，也没有进行动态方法解析则会触发消息转发机制。</p>
+<p>消息转发分为两个阶段：</p>
+<ol>
+<li>备援接收者转发阶段</li>
+<li>完整的消息转发</li>
+</ol>
+<p>如果响应了备援接收者转发，那么将忽略后面的完整消息转发。如果备援接收者转发和完整消息转发都不能响应方法，那么最后会执行 <code>doesNotRecognizeSelector:</code> 并抛出异常。</p>
+<h3 id="备援接收者转发"><a href="#备援接收者转发" class="headerlink" title="备援接收者转发"></a>备援接收者转发</h3><p>以刚才的 <code>MessageHandler</code> 为例，当调用 <code>sendMessage:toReceiver:</code> 方法系统没能找到方法实现时，如果重写了 <code>forwardingTargetForSelector:</code> 方法，那么系统就会在运行时调用这个方法进行备援接收者转发。</p>
+<p>该方法返回一个 <code>id</code> 类型的对象，表示系统将会把这个消息转发给其他对象处理。只要这个方法返回的不是 <code>nil</code> 或 <code>self</code> ，也会重新启动一次消息发送的过程。</p>
+<p>假设 <code>MessageHelper</code> 类已经实现了 <code>sendMessage:toReceiver:</code> 方法：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">MessageHelper</span> : <span class="title">NSObject</span></span></div><div class="line">- (<span class="keyword">void</span>)sendMessage:(<span class="built_in">NSString</span> *)message toReceiver:(MessageHandler *)receiver;</div><div class="line"><span class="keyword">@end</span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">MessageHelper</span></span></div><div class="line">- (<span class="keyword">void</span>)sendMessage:(<span class="built_in">NSString</span> *)message toReceiver:(MessageHandler *)receiver </div><div class="line">&#123;</div><div class="line">    <span class="comment">// ...</span></div><div class="line">&#125;</div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p> <code>MessageHandler</code> 重写 <code>forwardingTargetForSelector:</code> ，实例对象在调用 <code>sendMessage:toReceiver:</code> 时借由 <code>MessageHelper</code> 类实例处理：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">id</span>)forwardingTargetForSelector:(SEL)aSelector</div><div class="line">&#123;</div><div class="line">    <span class="keyword">if</span> (aSelector == <span class="keyword">@selector</span>(sendMessage:toReceiver:)) &#123;</div><div class="line">        <span class="keyword">return</span> [[MessageHelper alloc] init];</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">return</span> [<span class="keyword">super</span> forwardingTargetForSelector:aSelector];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="完整的消息转发"><a href="#完整的消息转发" class="headerlink" title="完整的消息转发"></a>完整的消息转发</h3><p>在进行完整的消息转发时，系统会先调用 <code>methodSignatureForSelector</code> 返回一个方法签名，用来获取方法的参数和返回值。</p>
+<p>如果该方法返回 <code>nil</code> ，那么系统将会执行 <code>doesNotRecognizeSelector:</code> 抛出异常 <code>unrecognized selector sent to instance</code> ；如果该方法返回一个合法的方法签名，系统会创建一个 <code>NSInvocation</code> 对象并调用 <code>forwardInvocation:</code> 方法进行消息转发。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 返回方法签名</span></div><div class="line">- (<span class="built_in">NSMethodSignature</span> *)methodSignatureForSelector:(SEL)aSelector </div><div class="line">&#123;</div><div class="line">    <span class="built_in">NSMethodSignature</span> *methodSignature = [<span class="keyword">super</span> methodSignatureForSelector:aSelector];</div><div class="line">    <span class="keyword">if</span> (methodSignature == <span class="literal">nil</span>) &#123;</div><div class="line">        methodSignature = [<span class="built_in">NSMethodSignature</span> signatureWithObjCTypes:<span class="string">"v@:@@"</span>];</div><div class="line">    &#125;</div><div class="line">  </div><div class="line">    <span class="keyword">return</span> methodSignature;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// 消息转发</span></div><div class="line">- (<span class="keyword">void</span>)forwardInvocation:(<span class="built_in">NSInvocation</span> *)anInvocation</div><div class="line">&#123;</div><div class="line">    MessageHelper *helper = [[MessageHelper alloc] init];</div><div class="line">    </div><div class="line">    <span class="keyword">if</span> ([helper respondsToSelector:anInvocation.selector]) &#123;</div><div class="line">        [anInvocation invokeWithTarget:helper];</div><div class="line">    &#125; <span class="keyword">else</span> &#123;</div><div class="line">        [<span class="keyword">super</span> forwardInvocation:anInvocation];</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>当进入 <code>forwardInvocation:</code> 时，即使在该方法中不做任何事情，程序也不会崩溃，系统只是把消息转发到该处，至于后续的操作并不关心。</p>
+<h3 id="消息转发与内省"><a href="#消息转发与内省" class="headerlink" title="消息转发与内省"></a>消息转发与内省</h3><p>当通过消息转发让实例对象处理对应的消息时，由于在实例对象所属类的方法调度列表中找不到对应的方法实现，所以调用 <code>respondsToSelector:</code> 或者对类调用 <code>instancesRespondToSelector:</code> 会返回 <code>NO</code>。但是可以通过重写这些方法保证对外接口的统一。</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">- (<span class="built_in">BOOL</span>)respondsToSelector:(SEL)aSelector</div><div class="line">&#123;</div><div class="line">    <span class="keyword">if</span> ( [<span class="keyword">super</span> respondsToSelector:aSelector] )</div><div class="line">        <span class="keyword">return</span> <span class="literal">YES</span>;</div><div class="line">    <span class="keyword">else</span> &#123;</div><div class="line">        <span class="keyword">if</span> (aSelector == <span class="keyword">@selector</span>(sendMessage:toReceiver:) &amp;&amp;</div><div class="line">            [MessageHelper instancesRespondToSelector:<span class="keyword">@selector</span>(aSelector)]) &#123;</div><div class="line">            <span class="keyword">return</span> <span class="literal">YES</span>;</div><div class="line">        &#125;</div><div class="line">        <span class="comment">// 其他判断...</span></div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="literal">NO</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>向对象发送不能处理的消息时，系统在类缓存以及方法调度表中找不到对应的方法实现，此时并不会立即崩溃，而是提供三种方式决定方法的最终调度：</p>
+<ol>
+<li>在崩溃前系统将进行动态方法解析，如果对象所属的类重写了 <code>resolveInstanceMethod:</code> 或 <code>resolveClassMethod:</code> 方法，那么可以在这些方法中利用 <code>class_addMethod</code> 动态添加方法。</li>
+<li>如果在动态方法解析后仍不能响应，那么将进入备援接收者转发阶段，通过 <code>forwardingTargetForSelector:</code> 方法将消息转交给其他对象处理。</li>
+<li>如果 <code>forwardingTargetForSelector:</code> 返回 <code>nil</code> 那么将进入完整的消息转发阶段。系统先调用 <code>methodSignatureForSelector:</code> 返回一个方法签名，用来获取方法的参数和返回值。如果该方法返回一个合法的方法签名，系统会创建一个 <code>NSInvocation</code> 对象并调用 <code>forwardInvocation:</code> 方法进行消息转发。如果该方法返回 <code>nil</code>，将会执行 <code>doesNotRecognizeSelector:</code> 并抛出异常。</li>
+</ol>
+<img src="/2017/02/26/Message-Forwarding/message_forwarding.png" alt="消息转发" title="消息转发">
+<p>三种方式比较：</p>
+<ul>
+<li>动态方法解析：在运行时提供动态添加方法时机，与消息转发机制相比更简单，适合在原始类中扩展功能；</li>
+<li>备援接收者转发：与完整的消息转发相比更简单、更迅速，可以将消息转发给其他对象处理，但转发对象数量仅限一个；</li>
+<li>完整消息转发：与备援接收者转发更复杂，但可以将消息转发给多个对象，可以模拟多继承效果。</li>
+</ul>
+<p>消息转发的步骤越往后，其代价越大。如果消息在动态方法解析阶段就能处理，那么在运行期系统就会将方法缓存起来，下次调用的时候就直接调用方法，而不触发消息转发。如果进入到消息转发阶段，消息能被备援接收者处理，就无需创建完整的 <code>NSInvocation</code> ，令消息处理过程更为简单。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtDynamicResolution.html#//apple_ref/doc/uid/TP40008048-CH102-SW1" target="_blank" rel="external">[1] Objective-C Runtime Programming Guide - Dynamic Method Resolution</a></p>
+<p><a href="https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtForwarding.html#//apple_ref/doc/uid/TP40008048-CH105-SW1" target="_blank" rel="external">[2] Objective-C Runtime Programming Guide - Message Forwarding</a></p>
+<p><a href="https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html#//apple_ref/doc/uid/TP40008048-CH100-SW1" target="_blank" rel="external">[3] Objective-C Runtime Programming Guide - Type Encodings</a></p>
+<p>[4] Matt Galloway. Effective Objective-C 2.0 编写高质量 iOS 与 OS X 代码的 52 个有效方法（爱飞翔 译）[M]. 北京: 机械工业出版社, 2014.</p>
+
           
         
       
@@ -486,28 +742,20 @@
       
         
           
-            <h2 id="Runtime"><a href="#Runtime" class="headerlink" title="Runtime"></a>Runtime</h2><p>runtime 是系统在运行的时候的一些机制，Objective-C 代码在程序运行时最终是转成了 runtime 的 C 语言代码，其中 runtime 在 Objective-C 中最重要的一个特性就是<strong>消息机制</strong>。对于 C 语言而言，函数的调用在编译的时候就已经确定了。而 Objective-C 在编译的时候并不决定真正调用哪个函数，并且只要声明就不会报错。</p>
-<h2 id="发送消息"><a href="#发送消息" class="headerlink" title="发送消息"></a>发送消息</h2><p>在 Objective-C 中，调用某个方法并不是像 C 语言那样<strong>调用函数</strong>，而是说<strong>向对象发送消息</strong>，消息在运行时之前不绑定到方法实现，编译器只是转换为消息表达，在运行时的时候再去寻找对应方法的实现并执行。</p>
-<h3 id="消息转换"><a href="#消息转换" class="headerlink" title="消息转换"></a>消息转换</h3><p>在 Objective-C 中，向对象发送一个消息是以一对方括号<code>[]</code>表示，例如：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// OC 的方法调用</span></div><div class="line">[receiver message];</div></pre></td></tr></table></figure>
-<p>该代码在 runtime 中转为 C 语言的 <code>objc_msgSend</code> 函数：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 转为 C 语言方法</span></div><div class="line">objc_msgSend(receiver, selector);</div></pre></td></tr></table></figure>
-<p>在 <code>objc/message.h</code>中可以看到该函数的声明</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="function">id <span class="title">objc_msgSend</span><span class="params">(id self, SEL op, ...)</span></span>;</div></pre></td></tr></table></figure>
-<p><code>objc_msgSend</code>中有两个重要的参数：消息接收者（id 类型）和方法名（方法选择器）。由于这两个参数没有在定义方法的源码中声明，因此也称为“隐藏”参数。函数后面的省略号则表示发送消息的参数。例如：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// OC 的方法</span></div><div class="line">[receiver messageWithArg1:arg1 arg2:arg2];</div><div class="line"></div><div class="line"><span class="comment">// 转为 C 语言的方法</span></div><div class="line">objc_msgSend(receiver, <span class="keyword">@selector</span>(messageWithArg1:arg2:), arg1, arg2);</div></pre></td></tr></table></figure>
-<p>虽然“隐藏”参数没有显示声明，但我们仍然可以使用，通过 <code>self</code> 关键词引用当前的消息接收者，通过 <code>_cmd</code> 引用当前的方法选择器</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">- strange &#123;</div><div class="line">    <span class="keyword">id</span>  target = getTheReceiver();</div><div class="line">    SEL method = getTheMethod();</div><div class="line"> </div><div class="line">    <span class="keyword">if</span> ( target == <span class="keyword">self</span> || method == _cmd )</div><div class="line">        <span class="keyword">return</span> <span class="literal">nil</span>;</div><div class="line">    <span class="keyword">return</span> [target performSelector:method];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+            <h2 id="Runtime"><a href="#Runtime" class="headerlink" title="Runtime"></a>Runtime</h2><p>runtime 是系统在运行的时候的一些机制，Objective-C 代码在程序运行时最终是转成了运行时代码。其中 runtime 在 Objective-C 中最重要的一个特性就是<strong>消息机制</strong>。对于 C 语言而言，函数的调用在编译的时候就已经确定了。Objective-C 在编译的时候并不决定真正调用哪个函数，而是在运行时才会去查找所要执行的方法，只要声明就不会报错。</p>
+<h2 id="发送消息"><a href="#发送消息" class="headerlink" title="发送消息"></a>发送消息</h2><p>在 Objective-C 中，调用某个方法并不是像 C 语言那样<strong>调用函数</strong>，而是说<strong>向对象发送消息</strong>，代码 <code>[receiver message]</code> 表示“向 receiver 对象发送 message 消息“。</p>
+<p>消息在运行时之前不绑定到方法实现，编译器只是转换为消息表达，在运行时的时候再去寻找对应方法的实现并执行。</p>
+<h3 id="消息转换"><a href="#消息转换" class="headerlink" title="消息转换"></a>消息转换</h3><p>在 Objective-C 中，向对象发送一个消息是以一对方括号<code>[]</code>表示，例如：<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// OC 调用方法</span></div><div class="line">[receiver message];</div></pre></td></tr></table></figure></p>
+<p>该代码在 runtime 中转为 C 语言的 <code>objc_msgSend</code> 函数：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 转为 C 语言函数</span></div><div class="line">objc_msgSend(receiver, selector);</div></pre></td></tr></table></figure></p>
+<p>在 <code>objc/message.h</code>中可以看到该函数的声明<br><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="function">id <span class="title">objc_msgSend</span><span class="params">(id self, SEL op, ...)</span></span>;</div></pre></td></tr></table></figure></p>
+<p><code>objc_msgSend</code>中有两个重要的参数：消息接收者（id 类型）和方法名（方法选择器）。由于这两个参数没有在定义方法的源码中声明，因此也称为“隐藏”参数。函数后面的省略号则表示发送消息的参数。例如：<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// OC 的方法</span></div><div class="line">[receiver messageWithArg1:arg1 arg2:arg2];</div><div class="line"></div><div class="line"><span class="comment">// 转为 C 语言的方法</span></div><div class="line">objc_msgSend(receiver, <span class="keyword">@selector</span>(messageWithArg1:arg2:), arg1, arg2);</div></pre></td></tr></table></figure></p>
+<p>虽然“隐藏”参数没有显示声明，但我们仍然可以使用，通过 <code>self</code> 关键词引用当前的消息接收者，通过 <code>_cmd</code> 引用当前的方法选择器<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">- strange &#123;</div><div class="line">    <span class="keyword">id</span>  target = getTheReceiver();</div><div class="line">    SEL method = getTheMethod();</div><div class="line"> </div><div class="line">    <span class="keyword">if</span> ( target == <span class="keyword">self</span> || method == _cmd )</div><div class="line">        <span class="keyword">return</span> <span class="literal">nil</span>;</div><div class="line">    <span class="keyword">return</span> [target performSelector:method];</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
 <p>在调用 <code>objc_msgSend</code> 后，又是怎么找到对应的方法实现并且执行它呢？在说明这个问题之前先了解一下 Objective-C 中类和方法的结构。</p>
-<h3 id="Class"><a href="#Class" class="headerlink" title="Class"></a>Class</h3><p>我们知道 Cocoa 框架的大都数类都是继承自 <code>NSObject</code> 类（也有例外，如：<code>NSProxy</code> 类），进入 <code>objc/NSObject.h</code> 可以看到 <code>NSObject</code> 的结构</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">NSObject</span> &lt;<span class="title">NSObject</span>&gt; </span>&#123;</div><div class="line">    Class isa  OBJC_ISA_AVAILABILITY;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>在 <code>NSObject</code> 中有一个 <code>Class</code> 类型的 <code>isa</code> 指针，这意味着每一个 <code>NSObject</code> 的实例都有一个 <code>isa</code> 指针变量。进入 <code>objc/objc.h</code> 查看 <code>Class</code> 的定义可以发现，它是结构体 <code>objc_class</code> 指针的别名：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/// An opaque type that represents an Objective-C class.</span></div><div class="line"><span class="keyword">typedef</span> <span class="keyword">struct</span> objc_class *Class;</div></pre></td></tr></table></figure>
-<p>再进入 <code>objc/runtime.h</code> 可以看到结构体 <code>objc_class</code> 的定义：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">struct</span> objc_class &#123;</div><div class="line">    Class isa  OBJC_ISA_AVAILABILITY;</div><div class="line"></div><div class="line"><span class="meta">#<span class="meta-keyword">if</span> !__OBJC2__</span></div><div class="line">    Class super_class                                        OBJC2_UNAVAILABLE;</div><div class="line">    <span class="keyword">const</span> <span class="keyword">char</span> *name                                         OBJC2_UNAVAILABLE;</div><div class="line">    <span class="keyword">long</span> version                                             OBJC2_UNAVAILABLE;</div><div class="line">    <span class="keyword">long</span> info                                                OBJC2_UNAVAILABLE;</div><div class="line">    <span class="keyword">long</span> instance_size                                       OBJC2_UNAVAILABLE;</div><div class="line">    <span class="keyword">struct</span> objc_ivar_list *ivars                             OBJC2_UNAVAILABLE;</div><div class="line">    <span class="keyword">struct</span> objc_method_list **methodLists                    OBJC2_UNAVAILABLE;</div><div class="line">    <span class="keyword">struct</span> objc_cache *cache                                 OBJC2_UNAVAILABLE;</div><div class="line">    <span class="keyword">struct</span> objc_protocol_list *protocols                     OBJC2_UNAVAILABLE;</div><div class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></div><div class="line"></div><div class="line">&#125; OBJC2_UNAVAILABLE;</div></pre></td></tr></table></figure>
-<p>可以知道：对象实例都有一个 <code>isa</code> 指针，该指针指向了结构体 <code>objc_class</code> 。而 <code>objc_class</code> 除了成员方法列表外，还可以看到父类指针、类名、成员变量列表等一系列描述该类实例的特征，同时还包括类的 <code>isa</code> 指针。这个 <code>isa</code> 又指向哪里呢？</p>
-<p>对于 Objective-C 这门面向对象语言来说一切皆对象，就连类本身也不例外，实际上 Objective-C 也确实是这么做的。每个实例通过 <code>isa</code> 指向了描述该<strong>类实例特征</strong>的结构体，而类对象通过 <code>isa</code> 指针指向了描述<strong>类静态特征</strong>的结构体，这个结构体称之为元类（meta class），换言之，类对象就是元类的实例。元类结构体：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/// Represents an instance of a class.</span></div><div class="line"><span class="keyword">struct</span> objc_object &#123;</div><div class="line">    Class isa  OBJC_ISA_AVAILABILITY;</div><div class="line">&#125;;</div><div class="line"></div><div class="line"><span class="comment">/// A pointer to an instance of a class.</span></div><div class="line"><span class="keyword">typedef</span> <span class="keyword">struct</span> objc_object *id;</div></pre></td></tr></table></figure>
+<h3 id="Class"><a href="#Class" class="headerlink" title="Class"></a>Class</h3><p>Cocoa 框架的绝大部分类都是继承自 <code>NSObject</code> 类（也有例外，如：<code>NSProxy</code> 类），进入 <code>objc/NSObject.h</code> 可以看到 <code>NSObject</code> 的结构：<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">NSObject</span> &lt;<span class="title">NSObject</span>&gt; </span>&#123;</div><div class="line">    Class isa  OBJC_ISA_AVAILABILITY;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>在 <code>NSObject</code> 中有一个 <code>Class</code> 类型的 <code>isa</code> 指针，这意味着每一个 <code>NSObject</code> 的实例都有一个 <code>isa</code> 指针变量。进入 <code>objc/objc.h</code> 查看 <code>Class</code> 的定义可以发现，它是结构体 <code>objc_class</code> 指针的别名：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/// An opaque type that represents an Objective-C class.</span></div><div class="line"><span class="keyword">typedef</span> <span class="keyword">struct</span> objc_class *Class;</div></pre></td></tr></table></figure></p>
+<p>再进入 <code>objc/runtime.h</code> 可以看到结构体 <code>objc_class</code> 的定义：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">struct</span> objc_class &#123;</div><div class="line">    Class isa  OBJC_ISA_AVAILABILITY;</div><div class="line"></div><div class="line"><span class="meta">#<span class="meta-keyword">if</span> !__OBJC2__</span></div><div class="line">    Class super_class                                        OBJC2_UNAVAILABLE;</div><div class="line">    <span class="keyword">const</span> <span class="keyword">char</span> *name                                         OBJC2_UNAVAILABLE;</div><div class="line">    <span class="keyword">long</span> version                                             OBJC2_UNAVAILABLE;</div><div class="line">    <span class="keyword">long</span> info                                                OBJC2_UNAVAILABLE;</div><div class="line">    <span class="keyword">long</span> instance_size                                       OBJC2_UNAVAILABLE;</div><div class="line">    <span class="keyword">struct</span> objc_ivar_list *ivars                             OBJC2_UNAVAILABLE;</div><div class="line">    <span class="keyword">struct</span> objc_method_list **methodLists                    OBJC2_UNAVAILABLE;</div><div class="line">    <span class="keyword">struct</span> objc_cache *cache                                 OBJC2_UNAVAILABLE;</div><div class="line">    <span class="keyword">struct</span> objc_protocol_list *protocols                     OBJC2_UNAVAILABLE;</div><div class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></div><div class="line"></div><div class="line">&#125; OBJC2_UNAVAILABLE;</div></pre></td></tr></table></figure></p>
+<p>可以知道：实例对象都有一个 <code>isa</code> 指针，该指针指向了结构体 <code>objc_class</code> 。而 <code>objc_class</code> 除了成员方法列表外，还可以看到父类指针、类名、成员变量列表等一系列描述该类实例的特征。同时还包括类的 <code>isa</code> 指针，这个 <code>isa</code> 指针又指向哪里呢？</p>
+<p>对于 Objective-C 这门面向对象语言来说一切皆对象，就连类本身也不例外，实际上 Objective-C 也确实是这么做的。每个实例通过 <code>isa</code> 指向了描述该<strong>类实例特征</strong>的结构体，而类对象通过 <code>isa</code> 指针指向了描述<strong>类静态特征</strong>的结构体，这个结构体称之为元类（meta class），换言之，类对象就是元类的实例。元类结构体：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/// Represents an instance of a class.</span></div><div class="line"><span class="keyword">struct</span> objc_object &#123;</div><div class="line">    Class isa  OBJC_ISA_AVAILABILITY;</div><div class="line">&#125;;</div><div class="line"></div><div class="line"><span class="comment">/// A pointer to an instance of a class.</span></div><div class="line"><span class="keyword">typedef</span> <span class="keyword">struct</span> objc_object *id;</div></pre></td></tr></table></figure></p>
 <p>因此在 Objective-C 的内部，每一个实例对象通过 <code>isa</code> 指针指向它的类对象，类对象通过 <code>super_class</code> 指向它的父类对象，顺着这个 <code>super_class</code> 指针一直指向根类 <code>NSObject</code> 。</p>
 <p>而类对象的 <code>isa</code> 则指向它的元类，元类的 <code>isa</code> 指针则直接指向了根类 <code>NSObject</code> 的元类。而 <code>NSObject</code> 的元类的 <code>isa</code> 指针指向了 <code>NSObject</code> 类本身。下图表示了它们之间的关系：</p>
 <img src="/2017/02/25/Messaging/class_isa.png" alt="isa 指针以及 superclass 指针的关系" title="isa 指针以及 superclass 指针的关系">
@@ -515,34 +763,32 @@
 <p>值得注意的是，在官方关于 <code>KVO</code> 的文档 <a href="https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/KeyValueObserving/Articles/KVOImplementation.html" target="_blank" rel="external">Key-Value Observing Implementation Details</a> 中提到：<code>KVO</code> 是通过 <code>isa-swizzling</code> 实现的。即 <code>isa</code> 指针在运行时会被修改为指向一个 <code>NSKVONotifying_</code> 前缀的派生类，而非真正的类。因此在 Objective-C 中最好不要通过 <code>isa</code> 指针来确定所属类，而是通过 <code>class</code> 方法来确定。</p>
 <p>对于 <code>NSObject</code> 及其子类可以通过 <code>isKindOfClass:</code> 和 <code>isMemberOfClass:</code> 这些内省方法方便且安全的判断实例的所属类和继承链。</p>
 </blockquote>
-<p>在结构体 <code>objc_class</code> 中可以看到一个二级指针的 <code>methodLists</code> 方法列表，这个列表就储存了当前类的成员方法信息（不包括父类）。</p>
-<h3 id="Method"><a href="#Method" class="headerlink" title="Method"></a>Method</h3><p>列表 <code>methodLists</code> 的结构如下：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">struct</span> objc_method_list &#123;</div><div class="line">    <span class="keyword">struct</span> objc_method_list *obsolete                        OBJC2_UNAVAILABLE;</div><div class="line"></div><div class="line">    <span class="keyword">int</span> method_count                                         OBJC2_UNAVAILABLE;</div><div class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> __LP64__</span></div><div class="line">    <span class="keyword">int</span> space                                                OBJC2_UNAVAILABLE;</div><div class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></div><div class="line">    <span class="comment">/* variable length structure */</span></div><div class="line">    <span class="keyword">struct</span> objc_method method_list[<span class="number">1</span>]                        OBJC2_UNAVAILABLE;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>列表的每个结点是一个描述方法的结构体，也就是 Objective-C 中的“方法”的基本单元—<code>objc_method</code> ，在 <code>objc/runtime.h</code> 中可以看到相关定义：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">typedef</span> <span class="keyword">struct</span> objc_method *Method;</div><div class="line"></div><div class="line"><span class="keyword">struct</span> objc_method &#123;</div><div class="line">    SEL method_name                                          OBJC2_UNAVAILABLE;</div><div class="line">    <span class="keyword">char</span> *method_types                                       OBJC2_UNAVAILABLE;</div><div class="line">    IMP method_imp                                           OBJC2_UNAVAILABLE;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<h3 id="SEL"><a href="#SEL" class="headerlink" title="SEL"></a>SEL</h3><p> <code>method_name</code> 就是方法名，其类型是 <code>SEL</code>，它是一个 int 类型的地址，地址中存放着方法名。一个方法对应着一个 <code>SEL</code>，即不会存在两个名字相同的方法，即使参数类型不同。通过 <code>@selector</code> 可获取。在 <code>objc/objc.h</code> 中可以看到 <code>SEL</code> 是结构体 <code>objc_selector</code> 指针的别名：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/// An opaque type that represents a method selector.</span></div><div class="line"><span class="keyword">typedef</span> <span class="keyword">struct</span> objc_selector *SEL;</div></pre></td></tr></table></figure>
-<h3 id="IMP"><a href="#IMP" class="headerlink" title="IMP"></a>IMP</h3><p><code>method_imp</code> 是方法实现的指针，其类型是 <code>IMP</code>，可理解为函数指针，指向方法实现的目标函数。在 <code>objc/objc.h</code> 中可以看到 <code>IMP</code> 的定义：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/// A pointer to the function of a method implementation. </span></div><div class="line"><span class="meta">#<span class="meta-keyword">if</span> !OBJC_OLD_DISPATCH_PROTOTYPES</span></div><div class="line"><span class="function"><span class="keyword">typedef</span> <span class="title">void</span> <span class="params">(*IMP)</span><span class="params">(<span class="keyword">void</span> <span class="comment">/* id, SEL, ... */</span> )</span></span>; </div><div class="line"><span class="meta">#<span class="meta-keyword">else</span></span></div><div class="line"><span class="function"><span class="keyword">typedef</span> <span class="title">id</span> <span class="params">(*IMP)</span><span class="params">(id, SEL, ...)</span></span>; </div><div class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></div></pre></td></tr></table></figure>
+<p>在结构体 <code>objc_class</code> 中可以看到一个二级指针的 <code>methodLists</code> 方法调度表，这个列表就储存了当前类的成员方法信息（不包括父类）。</p>
+<h3 id="Method"><a href="#Method" class="headerlink" title="Method"></a>Method</h3><p>调度表 <code>methodLists</code> 的结构如下：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">struct</span> objc_method_list &#123;</div><div class="line">    <span class="keyword">struct</span> objc_method_list *obsolete                        OBJC2_UNAVAILABLE;</div><div class="line"></div><div class="line">    <span class="keyword">int</span> method_count                                         OBJC2_UNAVAILABLE;</div><div class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> __LP64__</span></div><div class="line">    <span class="keyword">int</span> space                                                OBJC2_UNAVAILABLE;</div><div class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></div><div class="line">    <span class="comment">/* variable length structure */</span></div><div class="line">    <span class="keyword">struct</span> objc_method method_list[<span class="number">1</span>]                        OBJC2_UNAVAILABLE;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>列表的每个结点是一个描述方法的结构体，也就是 Objective-C 中的“方法”的基本单元—<code>objc_method</code> ，在 <code>objc/runtime.h</code> 中可以看到相关定义：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">typedef</span> <span class="keyword">struct</span> objc_method *Method;</div><div class="line"></div><div class="line"><span class="keyword">struct</span> objc_method &#123;</div><div class="line">    SEL method_name                                          OBJC2_UNAVAILABLE;</div><div class="line">    <span class="keyword">char</span> *method_types                                       OBJC2_UNAVAILABLE;</div><div class="line">    IMP method_imp                                           OBJC2_UNAVAILABLE;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<h3 id="SEL"><a href="#SEL" class="headerlink" title="SEL"></a>SEL</h3><p> <code>method_name</code> 就是方法名，其类型是 <code>SEL</code>，它是一个 int 类型的地址，地址中存放着方法名。一个方法对应着一个 <code>SEL</code>，即不会存在两个名字相同的方法，即使参数类型不同。通过 <code>@selector</code> 可获取。在 <code>objc/objc.h</code> 中可以看到 <code>SEL</code> 是结构体 <code>objc_selector</code> 指针的别名：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/// An opaque type that represents a method selector.</span></div><div class="line"><span class="keyword">typedef</span> <span class="keyword">struct</span> objc_selector *SEL;</div></pre></td></tr></table></figure></p>
+<h3 id="IMP"><a href="#IMP" class="headerlink" title="IMP"></a>IMP</h3><p><code>method_imp</code> 是方法实现的指针，其类型是 <code>IMP</code>，可理解为函数指针，指向方法实现的目标函数。在 <code>objc/objc.h</code> 中可以看到 <code>IMP</code> 的定义：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/// A pointer to the function of a method implementation. </span></div><div class="line"><span class="meta">#<span class="meta-keyword">if</span> !OBJC_OLD_DISPATCH_PROTOTYPES</span></div><div class="line"><span class="function"><span class="keyword">typedef</span> <span class="title">void</span> <span class="params">(*IMP)</span><span class="params">(<span class="keyword">void</span> <span class="comment">/* id, SEL, ... */</span> )</span></span>; </div><div class="line"><span class="meta">#<span class="meta-keyword">else</span></span></div><div class="line"><span class="function"><span class="keyword">typedef</span> <span class="title">id</span> <span class="params">(*IMP)</span><span class="params">(id, SEL, ...)</span></span>; </div><div class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></div></pre></td></tr></table></figure></p>
 <p>因此，只要通过对应的 <code>method_name</code> 找到这个方法，并且调用这个方法的 <code>method_imp</code> 就可以执行目标函数。</p>
-<h3 id="消息传递"><a href="#消息传递" class="headerlink" title="消息传递"></a>消息传递</h3><p>回到最开始的问题，objc_msgSend 后怎么找到对应的方法实现并且执行它呢？实际上就是根据该函数的两个“隐藏”参数 receiver（方法接收者）和 selector（方法名）查找。</p>
+<h3 id="方法调度"><a href="#方法调度" class="headerlink" title="方法调度"></a>方法调度</h3><p>回到最开始的问题，objc_msgSend 后怎么找到对应的方法实现并且执行它呢？实际上就是根据该函数的两个“隐藏”参数 receiver（方法接收者）和 selector（方法名）查找。</p>
 <p>首先通过 receiver 的 <code>isa</code> 指针找到所属类，在所属类的 <code>methodLists</code> 中通过 selector 查找是否有对应的方法。</p>
 <p>如果在所属类找不到，则顺着 <code>super_class</code> 指针在父类的 <code>methodList</code> 中查找，直到根类。</p>
 <p>一旦找到匹配的方法，那么就调用方法的 <code>method_imp</code> 执行目标函数，从而达到执行方法的效果。</p>
 <img src="/2017/02/25/Messaging/search_selector.png" alt="查找方法" title="查找方法">
 <h3 id="消息缓存"><a href="#消息缓存" class="headerlink" title="消息缓存"></a>消息缓存</h3><p>每次向一个对象发送消息时都要在继承链中查找一次吗？答案是否定的。</p>
-<p>回到结构体 <code>objc_class</code> 的定义，有个 <code>struct objc_cache *</code> 类型的 <code>cache</code> 指针。在 <code>objc/runtime.h</code> 中可以找到这个 <code>objc_cache</code> 的定义：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">typedef</span> <span class="keyword">struct</span> objc_cache *Cache    OBJC2_UNAVAILABLE;</div><div class="line"></div><div class="line"><span class="keyword">struct</span> objc_cache &#123;</div><div class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> mask <span class="comment">/* total = mask + 1 */</span> OBJC2_UNAVAILABLE;</div><div class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> occupied                    OBJC2_UNAVAILABLE;</div><div class="line">    Method buckets[<span class="number">1</span>]                        OBJC2_UNAVAILABLE;</div><div class="line">&#125;;</div></pre></td></tr></table></figure>
+<p>回到结构体 <code>objc_class</code> 的定义，有个 <code>struct objc_cache *</code> 类型的 <code>cache</code> 指针。在 <code>objc/runtime.h</code> 中可以找到这个 <code>objc_cache</code> 的定义：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">typedef</span> <span class="keyword">struct</span> objc_cache *Cache    OBJC2_UNAVAILABLE;</div><div class="line"></div><div class="line"><span class="keyword">struct</span> objc_cache &#123;</div><div class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> mask <span class="comment">/* total = mask + 1 */</span> OBJC2_UNAVAILABLE;</div><div class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> occupied                    OBJC2_UNAVAILABLE;</div><div class="line">    Method buckets[<span class="number">1</span>]                        OBJC2_UNAVAILABLE;</div><div class="line">&#125;;</div></pre></td></tr></table></figure></p>
 <p>这个结构体就是关于方法的缓存链表，在发送消息时，先从这个方法缓存里查找，如果找不到再遵循 <code>isa</code> 指针方式查找 <code>methodList</code> 。在第一次查找到方法后，就会把这个方法放到缓存里，以便下次查找的时候可以快速定位方法实现。</p>
-<h3 id="向-super-发送消息"><a href="#向-super-发送消息" class="headerlink" title="向 super 发送消息"></a>向 super 发送消息</h3><p>在使用 Objective-C 开发的过程中，有时会使用 <code>super</code> 关键词，那么在向 <code>super</code> 发送消息时会发生什么事情呢？比如在常见的 <code>init</code> 方法中调用 <code>[super init]</code> ：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">instancetype</span>)init &#123;</div><div class="line">    <span class="keyword">self</span> = [<span class="keyword">super</span> init];</div><div class="line">    <span class="keyword">if</span> (<span class="keyword">self</span>) &#123;</div><div class="line">        <span class="comment">// ...</span></div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="keyword">self</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<blockquote>
+<p>objc_cache 结构体字段描述：</p>
+<p>mask：一个整数，指定分配的缓存bucket的总数。在方法查找过程中，Objective-C runtime使用这个字段来确定开始线性查找数组的索引位置。指向方法selector的指针与该字段做一个AND位操作(index = (mask &amp; selector))。这可以作为一个简单的hash散列算法。</p>
+<p>occupied：一个整数，指定实际占用的缓存bucket的总数。</p>
+<p>buckets：指向Method数据结构指针的数组。这个数组可能包含不超过mask+1个元素。需要注意的是，指针可能是NULL，表示这个缓存bucket没有被占用，另外被占用的bucket可能是不连续的。这个数组可能会随着时间而增长。</p>
+<p>参考 <a href="http://www.cocoachina.com/ios/20141031/10105.html" target="_blank" rel="external">Objective-C Runtime 运行时之一：类与对象</a></p>
+</blockquote>
+<h3 id="向-super-发送消息"><a href="#向-super-发送消息" class="headerlink" title="向 super 发送消息"></a>向 super 发送消息</h3><p>在使用 Objective-C 开发的过程中，有时会使用 <code>super</code> 关键词，那么在向 <code>super</code> 发送消息时会发生什么事情呢？比如在常见的 <code>init</code> 方法中调用 <code>[super init]</code> ：<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">- (<span class="keyword">instancetype</span>)init &#123;</div><div class="line">    <span class="keyword">self</span> = [<span class="keyword">super</span> init];</div><div class="line">    <span class="keyword">if</span> (<span class="keyword">self</span>) &#123;</div><div class="line">        <span class="comment">// ...</span></div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="keyword">self</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
 <p>与“隐藏”参数 <code>self</code> 不同，<code>super</code> 实际上只是一个<strong>编译器标识符</strong>，负责告诉编译器在调用方法时，跳过当前类去调用父类的方法，而不是本类中的方法。</p>
-<p>在消息转化时，并不是转为 <code>objc_msgSend</code> 而是调用另外一个 <code>objc_msgSendSuper</code> 方法，并且传递给该方法的第一个参数是一个 <code>objc_super</code> 结构体指针：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="function">id <span class="title">objc_msgSendSuper</span> <span class="params">( <span class="keyword">struct</span> objc_super *super, SEL op, ... )</span></span>;</div></pre></td></tr></table></figure>
-<p>结构体 <code>objc_super</code> 定义：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/// Specifies the superclass of an instance. </span></div><div class="line"><span class="keyword">struct</span> objc_super &#123;</div><div class="line">    <span class="comment">/// Specifies an instance of a class.</span></div><div class="line">    __unsafe_unretained id receiver;</div><div class="line"></div><div class="line">    <span class="comment">/// Specifies the particular superclass of the instance to message. </span></div><div class="line"><span class="meta">#<span class="meta-keyword">if</span> !defined(__cplusplus)  &amp;&amp;  !__OBJC2__</span></div><div class="line">    <span class="comment">/* For compatibility with old objc-runtime.h header */</span></div><div class="line">    __unsafe_unretained Class <span class="keyword">class</span>;</div><div class="line"><span class="meta">#<span class="meta-keyword">else</span></span></div><div class="line">    __unsafe_unretained Class super_class;</div><div class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></div><div class="line">    <span class="comment">/* super_class is the first class to search */</span></div><div class="line">&#125;;</div></pre></td></tr></table></figure>
-<p>在调用 <code>objc_msgSendSuper</code> 时，编译器构造出 <code>objc_super</code> 结构体，第一个成员依旧是本消息接受者即 <code>self</code> ，第二个参数是父类。因此在向 <code>super</code> 发送 <code>init</code> 消息 <code>[super init]</code>，会大致转化为如下代码：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 获取父类</span></div><div class="line">Class super_cls = class_getSuperclass(object_getClass(self));</div><div class="line"></div><div class="line"><span class="comment">// 构造结构体</span></div><div class="line"><span class="keyword">struct</span> objc_super super_obj = &#123;self, super_cls&#125;;</div><div class="line"><span class="keyword">struct</span> objc_super *super_prt = &amp;super_obj;</div><div class="line"></div><div class="line"><span class="comment">// 转为 C 消息函数</span></div><div class="line">objc_msgSendSuper(super_prt, @selector(init));</div></pre></td></tr></table></figure>
+<p>在消息转化时，并不是转为 <code>objc_msgSend</code> 而是调用另外一个 <code>objc_msgSendSuper</code> 方法，并且传递给该方法的第一个参数是一个 <code>objc_super</code> 结构体指针：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="function">id <span class="title">objc_msgSendSuper</span> <span class="params">( <span class="keyword">struct</span> objc_super *super, SEL op, ... )</span></span>;</div></pre></td></tr></table></figure></p>
+<p>结构体 <code>objc_super</code> 定义：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/// Specifies the superclass of an instance. </span></div><div class="line"><span class="keyword">struct</span> objc_super &#123;</div><div class="line">    <span class="comment">/// Specifies an instance of a class.</span></div><div class="line">    __unsafe_unretained id receiver;</div><div class="line"></div><div class="line">    <span class="comment">/// Specifies the particular superclass of the instance to message. </span></div><div class="line"><span class="meta">#<span class="meta-keyword">if</span> !defined(__cplusplus)  &amp;&amp;  !__OBJC2__</span></div><div class="line">    <span class="comment">/* For compatibility with old objc-runtime.h header */</span></div><div class="line">    __unsafe_unretained Class <span class="keyword">class</span>;</div><div class="line"><span class="meta">#<span class="meta-keyword">else</span></span></div><div class="line">    __unsafe_unretained Class super_class;</div><div class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></div><div class="line">    <span class="comment">/* super_class is the first class to search */</span></div><div class="line">&#125;;</div></pre></td></tr></table></figure></p>
+<p>在调用 <code>objc_msgSendSuper</code> 时，编译器构造出 <code>objc_super</code> 结构体，第一个成员依旧是本消息接受者即 <code>self</code> ，第二个参数是父类。因此在向 <code>super</code> 发送 <code>init</code> 消息 <code>[super init]</code>，会大致转化为如下代码：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 获取父类</span></div><div class="line">Class super_cls = class_getSuperclass(object_getClass(self));</div><div class="line"></div><div class="line"><span class="comment">// 构造结构体</span></div><div class="line"><span class="keyword">struct</span> objc_super super_obj = &#123;self, super_cls&#125;;</div><div class="line"><span class="keyword">struct</span> objc_super *super_prt = &amp;super_obj;</div><div class="line"></div><div class="line"><span class="comment">// 转为 C 消息函数</span></div><div class="line">objc_msgSendSuper(super_prt, @selector(init));</div></pre></td></tr></table></figure></p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>在 Objective-C 中向对象发送消息 <code>[receiver message]</code> 时并不会立即执行，而是由编译器转换为消息表达，延迟到运行时再做处理：</p>
 <ol>
 <li>将 <code>[receiver message]</code> 转为 <code>objc_msgSend(receiver, @selector(message))</code> ；</li>
@@ -555,16 +801,13 @@
 <p>每个方法都有两个隐藏参数：self 和 _cmd。分别表示当前消息接受者和当前方法选择器。</p>
 <p>向 <code>super</code> 发送消息是，会转为 <code>objc_msgSendSuper ( struct objc_super *super, SEL op, … )</code> </p>
 <h2 id="扩展"><a href="#扩展" class="headerlink" title="扩展"></a>扩展</h2><p>在 Objective-C 中向对象发送消息，都会变为<code>查找方法-&gt;执行</code> ，如果某个方法被连续执行多次，那么查找方法时的额外开销将会不断累积。</p>
-<p>想要避免 runtime 的方法动态绑定，其唯一途径是获取到方法的地址即 <code>IMP</code> ，并且直接调用它。在 <code>NSObject</code> 中可以找到两个可以获取 <code>IMP</code> 的方法：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">- (IMP)methodForSelector:(SEL)aSelector;</div><div class="line">+ (IMP)instanceMethodForSelector:(SEL)aSelector;</div></pre></td></tr></table></figure>
+<p>想要避免 runtime 的方法动态绑定，其唯一途径是获取到方法的地址即 <code>IMP</code> ，并且直接调用它。在 <code>NSObject</code> 中可以找到两个可以获取 <code>IMP</code> 的方法：<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">- (IMP)methodForSelector:(SEL)aSelector;</div><div class="line">+ (IMP)instanceMethodForSelector:(SEL)aSelector;</div></pre></td></tr></table></figure></p>
 <p>可以通过 <code>-methodForSelector:</code> 或者 <code>+instanceMethodForSelector:</code> 规避方法动态绑定，从而节省消息传递时所花费的额外时间。</p>
-<p>例如，我们要对 <code>target</code> 发送消息 <code>setFilled</code> 表示目标已经装满：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">[target setFilled:<span class="literal">YES</span>]; <span class="comment">// 或 target.filled = YES;</span></div></pre></td></tr></table></figure>
+<p>例如，我们要对 <code>target</code> 发送消息 <code>setFilled</code> 表示目标已经装满：<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">[target setFilled:<span class="literal">YES</span>]; <span class="comment">// 或 target.filled = YES;</span></div></pre></td></tr></table></figure></p>
 <p>如果我们对包含 10000 个目标的列表中的每个 <code>target</code> 都调用一次 <code>setFilled</code> 会如何？</p>
 <p>在第一次调用 <code>setFilled</code> 的时候会在 <code>target</code> 所属类或父类的 <code>methodList</code> 找到对应的方法，并且把方法放入 <code>cache</code> 中缓存，往后的 9999 次操作则从 <code>cache</code> 查找方法并执行。</p>
-<p>如果我们可以一次性找到 <code>setFilled</code> 方法实现的地址，并且直接调用它，那么将会省略后面的消息转化和 <code>cache</code> 查找：</p>
-<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">NSArray</span>&lt;Target *&gt; *targetList = ...; <span class="comment">// 包含1000个目标的列表</span></div><div class="line"></div><div class="line"><span class="keyword">void</span> (*<span class="keyword">setter</span>)(<span class="keyword">id</span>, SEL, <span class="built_in">BOOL</span>);</div><div class="line"><span class="keyword">int</span> i;</div><div class="line"> </div><div class="line"><span class="keyword">setter</span> = (<span class="keyword">void</span> (*)(<span class="keyword">id</span>, SEL, <span class="built_in">BOOL</span>))[Target</div><div class="line">    instanceMethodForSelector:<span class="keyword">@selector</span>(setFilled:)];</div><div class="line"><span class="keyword">for</span> ( i = <span class="number">0</span> ; i &lt; <span class="number">10000</span> ; i++ )</div><div class="line">    <span class="keyword">setter</span>(targetList[i], <span class="keyword">@selector</span>(setFilled:), <span class="literal">YES</span>);</div></pre></td></tr></table></figure>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtHowMessagingWorks.html#//apple_ref/doc/uid/TP40008048-CH104-SW1" target="_blank" rel="external">[1] Objective-C Runtime Programming Guide - Messaging</a></p>
+<p>如果我们可以一次性找到 <code>setFilled</code> 方法实现的地址，并且直接调用它，那么将会省略后面的消息转化和 <code>cache</code> 查找：<br><figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">NSArray</span>&lt;Target *&gt; *targetList = ...; <span class="comment">// 包含1000个目标的列表</span></div><div class="line"></div><div class="line"><span class="keyword">void</span> (*<span class="keyword">setter</span>)(<span class="keyword">id</span>, SEL, <span class="built_in">BOOL</span>);</div><div class="line"><span class="keyword">int</span> i;</div><div class="line"> </div><div class="line"><span class="keyword">setter</span> = (<span class="keyword">void</span> (*)(<span class="keyword">id</span>, SEL, <span class="built_in">BOOL</span>))[Target</div><div class="line">    instanceMethodForSelector:<span class="keyword">@selector</span>(setFilled:)];</div><div class="line"><span class="keyword">for</span> ( i = <span class="number">0</span> ; i &lt; <span class="number">10000</span> ; i++ )</div><div class="line">    <span class="keyword">setter</span>(targetList[i], <span class="keyword">@selector</span>(setFilled:), <span class="literal">YES</span>);</div></pre></td></tr></table></figure></p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtHowMessagingWorks.html#//apple_ref/doc/uid/TP40008048-CH104-SW1" target="_blank" rel="external">[1] Objective-C Runtime Programming Guide - Messaging</a><br><a href="http://www.cocoachina.com/ios/20141031/10105.html" target="_blank" rel="external">[2] Objective-C Runtime 运行时之一：类与对象</a></p>
 
           
         
@@ -641,7 +884,7 @@
           
             <div class="site-state-item site-state-posts">
               <a href="/archives">
-                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-count">3</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>

@@ -1,0 +1,755 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="runtime," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0" />
+
+
+
+
+
+
+<meta name="description" content="介绍在 runtime 的实际应用中，关联对象再常见不过了，它提供一种“键—对象”形式的存取机制，在不改变源码的情况下，达到在运行时为类添加“成员变量”的目的。通过关联对象还可以解决在分类中不能为类添加新成员变量的问题。
+除了关联对象，runtime 运用较多的就是方法调配，通过方法调配可以互相交换两个方法的实现（IMP）。
+关联对象（Associated Object）关联对象可以为指定的实例对">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Associated Object & Method Swizzling">
+<meta property="og:url" content="https://arKenLee.github.io/2017/03/05/Associated-Object-Method-Swizzling/index.html">
+<meta property="og:site_name" content="Ken’s Notes">
+<meta property="og:description" content="介绍在 runtime 的实际应用中，关联对象再常见不过了，它提供一种“键—对象”形式的存取机制，在不改变源码的情况下，达到在运行时为类添加“成员变量”的目的。通过关联对象还可以解决在分类中不能为类添加新成员变量的问题。
+除了关联对象，runtime 运用较多的就是方法调配，通过方法调配可以互相交换两个方法的实现（IMP）。
+关联对象（Associated Object）关联对象可以为指定的实例对">
+<meta property="og:updated_time" content="2017-03-05T16:57:11.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Associated Object & Method Swizzling">
+<meta name="twitter:description" content="介绍在 runtime 的实际应用中，关联对象再常见不过了，它提供一种“键—对象”形式的存取机制，在不改变源码的情况下，达到在运行时为类添加“成员变量”的目的。通过关联对象还可以解决在分类中不能为类添加新成员变量的问题。
+除了关联对象，runtime 运用较多的就是方法调配，通过方法调配可以互相交换两个方法的实现（IMP）。
+关联对象（Associated Object）关联对象可以为指定的实例对">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://arKenLee.github.io/2017/03/05/Associated-Object-Method-Swizzling/"/>
+
+
+
+
+
+  <title> Associated Object & Method Swizzling | Ken’s Notes </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ken’s Notes</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Keep Calm and Carry On</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="https://arKenLee.github.io/2017/03/05/Associated-Object-Method-Swizzling/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Lee">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/icon.JPG">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ken’s Notes">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Associated Object & Method Swizzling
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-03-05T17:59:56+08:00">
+                2017-03-05
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Objective-C/" itemprop="url" rel="index">
+                    <span itemprop="name">Objective-C</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>在 runtime 的实际应用中，<strong>关联对象</strong>再常见不过了，它提供一种“键—对象”形式的存取机制，在不改变源码的情况下，达到在运行时为类添加“成员变量”的目的。通过关联对象还可以解决在分类中不能为类添加新成员变量的问题。</p>
+<p>除了关联对象，runtime 运用较多的就是<strong>方法调配</strong>，通过<strong>方法调配</strong>可以互相交换两个方法的实现（IMP）。</p>
+<h2 id="关联对象（Associated-Object）"><a href="#关联对象（Associated-Object）" class="headerlink" title="关联对象（Associated Object）"></a>关联对象（Associated Object）</h2><p><strong>关联对象</strong>可以为指定的实例对象关联多个其他对象，这些对象将通过不同的“键”（ <code>void</code> 类型的指针）来区分。<strong>关联对象</strong>涉及三个函数，这些函数都可以在 <code>objc/runtime.h</code> 中找到定义：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 存储关联对象</span></div><div class="line"><span class="keyword">void</span> objc_setAssociatedObject(<span class="keyword">id</span> object, <span class="keyword">const</span> <span class="keyword">void</span> *key, <span class="keyword">id</span> value, objc_AssociationPolicy policy);</div><div class="line"></div><div class="line"><span class="comment">// 获取关联对象</span></div><div class="line"><span class="keyword">id</span> objc_getAssociatedObject(<span class="keyword">id</span> object, <span class="keyword">const</span> <span class="keyword">void</span> *key);</div><div class="line"></div><div class="line"><span class="comment">// 移除关联对象</span></div><div class="line"><span class="keyword">void</span> objc_removeAssociatedObjects(<span class="keyword">id</span> object);</div></pre></td></tr></table></figure>
+<p>在存储关联对象时，可以通过指定的存储策略枚举值来维护类似 @property 属性相应的内存管理语义：</p>
+<table>
+<thead>
+<tr>
+<th>关联类型</th>
+<th>等效的 @property 属性</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>OBJC_ASSOCIATION_ASSIGN</td>
+<td>assign</td>
+</tr>
+<tr>
+<td>OBJC_ASSOCIATION_RETAIN_NONATOMIC</td>
+<td>nonatomic, retain</td>
+</tr>
+<tr>
+<td>OBJC_ASSOCIATION_COPY_NONATOMIC</td>
+<td>nonatomic, copy</td>
+</tr>
+<tr>
+<td>OBJC_ASSOCIATION_RETAIN</td>
+<td>retain</td>
+</tr>
+<tr>
+<td>OBJC_ASSOCIATION_COPY</td>
+<td>copy</td>
+</tr>
+</tbody>
+</table>
+<p>设置关联对象时，如果希望完全相同的指针才能匹配得到同一个值，那么通常的做法是使用静态全局变量作为“键”。例如：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">static</span> <span class="keyword">void</span> *kExtraValKey = &amp;kExtraValKey;</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">MyClass</span> (<span class="title">Extra</span>)</span></div><div class="line">  </div><div class="line">- (<span class="keyword">void</span>)setExtraVal:(<span class="keyword">id</span>)val </div><div class="line">&#123;</div><div class="line">    <span class="comment">// 通过 kExtraValKey 关联额外变量</span></div><div class="line">    objc_setAssociatedObject(<span class="keyword">self</span>, kExtraValKey, val,  OBJC_ASSOCIATION_RETAIN_NONATOMIC);</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (<span class="keyword">id</span>)extraVal </div><div class="line">&#123;</div><div class="line">    <span class="comment">// 通过 kExtraValKey 获取额外变量</span></div><div class="line">    <span class="keyword">return</span> objc_getAssociatedObject(<span class="keyword">self</span>, kExtraValKey);</div><div class="line">&#125;</div><div class="line">  </div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>在<a href="https://arkenlee.github.io/2017/02/25/Messaging/">消息发送</a>中提到，<code>SEL</code> 是结构体 <code>objc_selector</code> 指针的别名： </p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">typedef</span> <span class="keyword">struct</span> objc_selector *SEL;</div></pre></td></tr></table></figure>
+<p>每个 <code>SEL</code> 在 runtime 中都是唯一的，因此也可以使用 <code>SEL</code> 作为“键”，从而节省了额外声明静态全局变量，例如：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">MyClass</span> (<span class="title">Extra</span>)</span></div><div class="line">  </div><div class="line">- (<span class="keyword">void</span>)setExtraVal:(<span class="keyword">id</span>)val </div><div class="line">&#123;</div><div class="line">    <span class="comment">// 通过 @selector(extraVal) 关联额外变量</span></div><div class="line">    objc_setAssociatedObject(<span class="keyword">self</span>, <span class="keyword">@selector</span>(extraVal), val,  OBJC_ASSOCIATION_RETAIN_NONATOMIC);</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (<span class="keyword">id</span>)extraVal </div><div class="line">&#123;</div><div class="line">    <span class="comment">// 每个方法中都有一个隐藏参数 _cmd 引用当前方法的 selector</span></div><div class="line">    <span class="comment">// 因此也可以通过 _cmd 即 @selector(extraVal) 获取额外变量</span></div><div class="line">    <span class="keyword">return</span> objc_getAssociatedObject(<span class="keyword">self</span>, _cmd);</div><div class="line">&#125;</div><div class="line"></div><div class="line"></div><div class="line">- (<span class="built_in">NSMutableArray</span>&lt;<span class="built_in">NSString</span> *&gt; *)extraTags </div><div class="line">&#123;</div><div class="line">    <span class="built_in">NSMutableArray</span> *tags = objc_getAssociatedObject(<span class="keyword">self</span>, _cmd);</div><div class="line">    </div><div class="line">    <span class="keyword">if</span> (tags == <span class="literal">nil</span>) &#123;</div><div class="line">        tags = [<span class="built_in">NSMutableArray</span> array];</div><div class="line">        objc_setAssociatedObject(<span class="keyword">self</span>, _cmd, tags, OBJC_ASSOCIATION_RETAIN_NONATOMIC);</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">return</span> tags;</div><div class="line">&#125;</div><div class="line">  </div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>当一个对象被释放时，系统内部会自动调用 <code>objc_removeAssociatedObjects</code> 函数移除所有的关联对象。当然如果希望在恰当的时机提前移除，也可以自行调用该函数。</p>
+<blockquote>
+<p>在<a href="http://blog.leichunfeng.com/blog/2015/06/26/objective-c-associated-objects-implementation-principle/" target="_blank" rel="external">Objective-C Associated Objects 的实现原理</a>中有详细说明 runtime 是如何管理关联对象。</p>
+</blockquote>
+<h2 id="方法调配（Method-Swizzling）"><a href="#方法调配（Method-Swizzling）" class="headerlink" title="方法调配（Method Swizzling）"></a>方法调配（Method Swizzling）</h2><p>在<a href="https://arkenlee.github.io/2017/02/25/Messaging/">消息发送</a>中提到，在方法调度表中通过 <code>selector</code> 查找到对应的方法实现（即函数指针 <code>IMP</code> ），然后调用 <code>IMP</code> 来实现方法调用。</p>
+<p>因此我们可以理解为每个 <code>selector</code> 都映射到了指定的 <code>IMP</code> ，而通过 runtime 的一些方法交换两个已有的方法实现则称作<strong>方法调配</strong>（没找到比较统一的译名，这里暂时用 【Effective Objective-C 2.0 编写高质量 iOS 与 OS X 代码的52个有效方法】的译名）。</p>
+<p>有时候希望在既有类的方法中统一添加某些操作，例如打印一些日志信息，但又不想在每次调用方法的代码后面加上日志信息操作代码，也不想通过继承的方式去重写原有的方法。那么可以先添加一个带有日志信息的方法，然后通过方法调配与原有的方法进行交换，可以优雅而简洁的解决这个问题。</p>
+<p>例如在 <code>NSString</code> 中有一个将字符串转为小写的方法 <code>lowercaseString</code> ，我希望字符串在转为小写的同时能输出原有的字符串的比较信息，那么可以为 <code>NSString</code> 添加一个分类，自定义一个能输出比较信息的转小写方法，然后在 <code>load</code> 方法中交换它们：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#import <span class="meta-string">"NSString+Add.h"</span></span></div><div class="line"><span class="meta">#import <span class="meta-string">&lt;objc/runtime.h&gt;</span></span></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">NSString</span> (<span class="title">Add</span>)</span></div><div class="line"></div><div class="line">+ (<span class="keyword">void</span>)load &#123;</div><div class="line">    <span class="keyword">static</span> <span class="built_in">dispatch_once_t</span> onceToken;</div><div class="line">    <span class="built_in">dispatch_once</span>(&amp;onceToken, ^&#123;</div><div class="line">        Method orgMethodImp = class_getInstanceMethod(<span class="keyword">self</span>, <span class="keyword">@selector</span>(lowercaseString));</div><div class="line">        Method dstMethodImp = class_getInstanceMethod(<span class="keyword">self</span>, <span class="keyword">@selector</span>(myLowercaseString));</div><div class="line">        method_exchangeImplementations(orgMethodImp, dstMethodImp);</div><div class="line">    &#125;);</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (<span class="built_in">NSString</span> *)myLowercaseString &#123;</div><div class="line">    <span class="built_in">NSString</span> *lowercaseStr = [<span class="keyword">self</span> myLowercaseString];</div><div class="line">    <span class="built_in">NSLog</span>(<span class="string">@"%@ -&gt; %@"</span>, <span class="keyword">self</span>, lowercaseStr);  <span class="comment">// 输出比较信息</span></div><div class="line">    <span class="keyword">return</span> lowercaseStr;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">@end</span></div></pre></td></tr></table></figure>
+<p>这里在 <code>myLowercaseString</code> 中调用了 <code>myLowercaseString</code> 方法并不会造成死循环，这是因为在运行期 <code>myLowercaseString</code> 的 <code>IMP</code> 实际上对应的是原来的 <code>lowercaseString</code> 的 <code>IMP</code> ，因此这里调用的方法实际上还是原来的转小写方法，并不会造成死循环。</p>
+<h3 id="为什么在-load-方法中交换，并且在-dispatch-once-中执行？"><a href="#为什么在-load-方法中交换，并且在-dispatch-once-中执行？" class="headerlink" title="为什么在 load 方法中交换，并且在 dispatch_once 中执行？"></a>为什么在 <code>load</code> 方法中交换，并且在 <code>dispatch_once</code> 中执行？</h3><p>在程序加载时，系统将每个类加载到内存中分配空间，此时优先将类定义中的方法添加到方法调度表（methodList）中，而类别中的方法是后添加（<em>各类别的添加顺序与.m文件连接顺序有关，可在项目工程的 Targets -&gt; Build Phases 的 Compile Sources 中查看文件顺序</em>），由于方法的添加采用的是头插法，因此类别的方法在”消息发送“的搜索过程中优先找到，造成类别方法会重写掉类定义的同名方法的现象。而 <code>load</code> 方法是在类加载到内存时，由 runtime 负责向类（按继承顺序递归）及类别调用，可以保证每个 <code>load</code> 方法都被调用一次。</p>
+<p>由于使用方法调配会影响该类的全局状态，因此要尽量避免出现冲突或者遗漏的情况。在 <code>load</code> 方法中进行方法调配可以确保方法交换不会遗漏，在 <code>load</code> 方法中使用 GCD 的 <code>dispatch_once</code> 确保该段方法调配仅执行一次，保证方法交换的一致性。</p>
+<h3 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h3><p>方法调配固然强大，但是这种”黑魔法“有一些潜在危险，如果使用得当可以让代码有质的飞跃，如果使用不当则会产生无法预知的后果。由于方法调配牵一发而动全身，如果滥用该特性会令代码变得不易理解且难以维护，还会有”方法命名重复“的问题，因此在使用方法调配要十分谨慎。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/runtime/" rel="tag"># runtime</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/02/26/Message-Forwarding/" rel="next" title="Runtime - Message Forwarding">
+                <i class="fa fa-chevron-left"></i> Runtime - Message Forwarding
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+          
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/icon.JPG"
+               alt="Lee" />
+          <p class="site-author-name" itemprop="name">Lee</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+        
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">3</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">1</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">1</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/arKenLee" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#介绍"><span class="nav-number">1.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#关联对象（Associated-Object）"><span class="nav-number">2.</span> <span class="nav-text">关联对象（Associated Object）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#方法调配（Method-Swizzling）"><span class="nav-number">3.</span> <span class="nav-text">方法调配（Method Swizzling）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#为什么在-load-方法中交换，并且在-dispatch-once-中执行？"><span class="nav-number">3.1.</span> <span class="nav-text">为什么在 load 方法中交换，并且在 dispatch_once 中执行？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#注意事项"><span class="nav-number">3.2.</span> <span class="nav-text">注意事项</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Lee</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Muse
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+</body>
+</html>
