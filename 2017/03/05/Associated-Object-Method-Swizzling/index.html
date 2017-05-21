@@ -97,7 +97,7 @@
 <meta property="og:description" content="介绍在 runtime 的实际应用中，关联对象再常见不过了，它提供一种“键—对象”形式的存取机制，在不改变源码的情况下，达到在运行时为类添加“成员变量”的目的。通过关联对象还可以解决在分类中不能为类添加新成员变量的问题。
 除了关联对象，runtime 运用较多的就是方法调配，通过方法调配可以互相交换两个方法的实现（IMP）。
 关联对象（Associated Object）关联对象可以为指定的实例对">
-<meta property="og:updated_time" content="2017-03-05T16:57:11.000Z">
+<meta property="og:updated_time" content="2017-03-05T17:04:54.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Associated Object & Method Swizzling">
 <meta name="twitter:description" content="介绍在 runtime 的实际应用中，关联对象再常见不过了，它提供一种“键—对象”形式的存取机制，在不改变源码的情况下，达到在运行时为类添加“成员变量”的目的。通过关联对象还可以解决在分类中不能为类添加新成员变量的问题。
@@ -402,7 +402,7 @@
 <p>这里在 <code>myLowercaseString</code> 中调用了 <code>myLowercaseString</code> 方法并不会造成死循环，这是因为在运行期 <code>myLowercaseString</code> 的 <code>IMP</code> 实际上对应的是原来的 <code>lowercaseString</code> 的 <code>IMP</code> ，因此这里调用的方法实际上还是原来的转小写方法，并不会造成死循环。</p>
 <h3 id="为什么在-load-方法中交换，并且在-dispatch-once-中执行？"><a href="#为什么在-load-方法中交换，并且在-dispatch-once-中执行？" class="headerlink" title="为什么在 load 方法中交换，并且在 dispatch_once 中执行？"></a>为什么在 <code>load</code> 方法中交换，并且在 <code>dispatch_once</code> 中执行？</h3><p>在程序加载时，系统将每个类加载到内存中分配空间，此时优先将类定义中的方法添加到方法调度表（methodList）中，而类别中的方法是后添加（<em>各类别的添加顺序与.m文件连接顺序有关，可在项目工程的 Targets -&gt; Build Phases 的 Compile Sources 中查看文件顺序</em>），由于方法的添加采用的是头插法，因此类别的方法在”消息发送“的搜索过程中优先找到，造成类别方法会重写掉类定义的同名方法的现象。而 <code>load</code> 方法是在类加载到内存时，由 runtime 负责向类（按继承顺序递归）及类别调用，可以保证每个 <code>load</code> 方法都被调用一次。</p>
 <p>由于使用方法调配会影响该类的全局状态，因此要尽量避免出现冲突或者遗漏的情况。在 <code>load</code> 方法中进行方法调配可以确保方法交换不会遗漏，在 <code>load</code> 方法中使用 GCD 的 <code>dispatch_once</code> 确保该段方法调配仅执行一次，保证方法交换的一致性。</p>
-<h3 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h3><p>方法调配固然强大，但是这种”黑魔法“有一些潜在危险，如果使用得当可以让代码有质的飞跃，如果使用不当则会产生无法预知的后果。由于方法调配牵一发而动全身，如果滥用该特性会令代码变得不易理解且难以维护，还会有”方法命名重复“的问题，因此在使用方法调配要十分谨慎。</p>
+<h3 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h3><p>方法调配固然强大，但是这种”黑魔法“有一些潜在危险，如果使用得当可以让代码有质的飞跃，如果使用不当则会产生无法预知的后果。由于方法调配牵一发而动全身，如果滥用该特性会令代码变得不易理解且难以维护，还会有”方法命名重复“的问题，因此在使用方法调配时要十分谨慎。</p>
 
       
     </div>
@@ -448,6 +448,10 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/04/02/初识AVKit和AVFoundation/" rel="prev" title="初识 AVKit & AVFoundation">
+                初识 AVKit & AVFoundation <i class="fa fa-chevron-right"></i>
+              </a>
             
           </div>
         </div>
@@ -519,7 +523,7 @@
           
             <div class="site-state-item site-state-posts">
               <a href="/archives">
-                <span class="site-state-item-count">3</span>
+                <span class="site-state-item-count">7</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -528,7 +532,7 @@
           
             <div class="site-state-item site-state-categories">
               
-                <span class="site-state-item-count">1</span>
+                <span class="site-state-item-count">2</span>
                 <span class="site-state-item-name">分类</span>
               
             </div>
@@ -537,7 +541,7 @@
           
             <div class="site-state-item site-state-tags">
               <a href="/tags">
-                <span class="site-state-item-count">1</span>
+                <span class="site-state-item-count">4</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>

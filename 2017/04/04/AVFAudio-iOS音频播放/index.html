@@ -1,0 +1,1088 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="AVFoundation, AVFAudio," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0" />
+
+
+
+
+
+
+<meta name="description" content="介绍iOS 主要提供了以下几种方式来播放音频：
+
+AV Foundation framework
+Audio Queue Services
+System Sound Services
+OpenAL
+
+本篇主要介绍使用 AVFoundation 框架中的 AVFAudio 子框架来播放音频
+Demo
+AVFAudio在 AVFoundation 中有一个子框架 AVFAudio ，包括了 iOS 音">
+<meta property="og:type" content="article">
+<meta property="og:title" content="AVFAudio-iOS音频播放">
+<meta property="og:url" content="https://arKenLee.github.io/2017/04/04/AVFAudio-iOS音频播放/index.html">
+<meta property="og:site_name" content="Ken’s Notes">
+<meta property="og:description" content="介绍iOS 主要提供了以下几种方式来播放音频：
+
+AV Foundation framework
+Audio Queue Services
+System Sound Services
+OpenAL
+
+本篇主要介绍使用 AVFoundation 框架中的 AVFAudio 子框架来播放音频
+Demo
+AVFAudio在 AVFoundation 中有一个子框架 AVFAudio ，包括了 iOS 音">
+<meta property="og:image" content="https://arKenLee.github.io/2017/04/04/AVFAudio-iOS音频播放/aspg_intro.png">
+<meta property="og:image" content="https://arKenLee.github.io/2017/04/04/AVFAudio-iOS音频播放/background_modes.png">
+<meta property="og:image" content="https://arKenLee.github.io/2017/04/04/AVFAudio-iOS音频播放/audio_route_change.png">
+<meta property="og:updated_time" content="2017-05-21T10:53:55.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="AVFAudio-iOS音频播放">
+<meta name="twitter:description" content="介绍iOS 主要提供了以下几种方式来播放音频：
+
+AV Foundation framework
+Audio Queue Services
+System Sound Services
+OpenAL
+
+本篇主要介绍使用 AVFoundation 框架中的 AVFAudio 子框架来播放音频
+Demo
+AVFAudio在 AVFoundation 中有一个子框架 AVFAudio ，包括了 iOS 音">
+<meta name="twitter:image" content="https://arKenLee.github.io/2017/04/04/AVFAudio-iOS音频播放/aspg_intro.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://arKenLee.github.io/2017/04/04/AVFAudio-iOS音频播放/"/>
+
+
+
+
+
+  <title> AVFAudio-iOS音频播放 | Ken’s Notes </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ken’s Notes</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Keep Calm and Carry On</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="https://arKenLee.github.io/2017/04/04/AVFAudio-iOS音频播放/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Lee">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/icon.JPG">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ken’s Notes">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                AVFAudio-iOS音频播放
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-04-04T20:42:13+08:00">
+                2017-04-04
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Media/" itemprop="url" rel="index">
+                    <span itemprop="name">Media</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>iOS 主要提供了以下几种方式来播放音频：</p>
+<ul>
+<li>AV Foundation framework</li>
+<li>Audio Queue Services</li>
+<li>System Sound Services</li>
+<li>OpenAL</li>
+</ul>
+<p>本篇主要介绍使用 <code>AVFoundation</code> 框架中的 <code>AVFAudio</code> 子框架来播放音频</p>
+<p><a href="https://github.com/arKenLee/MediaDemo" target="_blank" rel="external">Demo</a></p>
+<h2 id="AVFAudio"><a href="#AVFAudio" class="headerlink" title="AVFAudio"></a>AVFAudio</h2><p>在 <code>AVFoundation</code> 中有一个子框架 <code>AVFAudio</code> ，包括了 iOS 音频相关的类以及高级接口。其中最核心的类是 <code>AVAudioSession</code> ，通过 <code>AVAudioSession</code> 来处理App与App之间，App与设备之间的音频交互行为。</p>
+<img src="/2017/04/04/AVFAudio-iOS音频播放/aspg_intro.png" alt="aspg_intro.png" title="">
+<h3 id="AVAudioSession"><a href="#AVAudioSession" class="headerlink" title="AVAudioSession"></a>AVAudioSession</h3><p><code>AVAudioSession</code> 相当于 App 与 iOS 之间的桥梁，通过它来控制音频相关的行为，通过 <code>AVAudioSession.sharedInstance()</code> 获取单例对象。</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> audioSession = <span class="type">AVAudioSession</span>.sharedInstance()</div></pre></td></tr></table></figure>
+<p>可处理的事件包括：</p>
+<ol>
+<li>处理用户拔插耳机、来电等音频中断情况</li>
+<li>选择合适的输入和输出设备及路线</li>
+<li>响应静音开关事件</li>
+<li>集成其他App的音频等等</li>
+</ol>
+<h3 id="一、激活音频会话-AVAudioSession"><a href="#一、激活音频会话-AVAudioSession" class="headerlink" title="一、激活音频会话 AVAudioSession"></a>一、激活音频会话 AVAudioSession</h3><p>在要处理音频相关的行为（例如播放某个音频）之前需要激活 <code>AVAudioSession</code> ，通过 <code>setActive</code> 或 <code>setActive:with:</code> 方法激活或停用音频会话。</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> audioSession = <span class="type">AVAudioSession</span>.sharedInstance()</div><div class="line"><span class="keyword">do</span> &#123;</div><div class="line">	<span class="keyword">try</span> audioSession.setActive(<span class="literal">true</span>)</div><div class="line">	<span class="comment">// try try audioSession.setActive(true, with: [.notifyOthersOnDeactivation])</span></div><div class="line">&#125; <span class="keyword">catch</span> <span class="keyword">let</span> error &#123;</div><div class="line">	<span class="built_in">print</span>(<span class="string">"set AVAudioSession active failure with error: <span class="subst">\(error)</span>"</span>)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>如果设置选项 <code>notifyOthersOnDeactivation</code> ，在App中断已结束（例如打完电话回到app），并且可能会恢复播放时，通过通知回调给App，仅在 <code>AVAudioSession</code> 停用时有效。如果 <code>AVAudioSession</code> 处于激活状态，App中断结束都可以收到通知。</p>
+<p>需要注意的是，这两个设置方法是同步操作，很有可能会阻塞当前线程，因此尽量不要在长时间阻塞的线程去激活音频会话。</p>
+<p>从 iOS 8 开始，在运行或暂停音频文件相关的I/O流（例如录音、格式转换等）过程中，如果将音频会话设置为 <code>false</code> App 将会抛出异常，所以在关闭音频会话之前要确保文件流处于关闭状态。</p>
+<blockquote>
+<p>从 Xcode 8 开始，设置音频会话类别后，系统会打印一些播放日志：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">&gt; <span class="number">2017</span>-<span class="number">04</span>-<span class="number">05</span> <span class="number">00</span>:<span class="number">08</span>:<span class="number">00.953226</span>+<span class="number">0800</span> <span class="type">MediaDemo</span>[<span class="number">95980</span>:<span class="number">4515120</span>] [aqme] <span class="number">254</span>: <span class="type">AQDefaultDevice</span> (<span class="number">1</span>): skipping input stream <span class="number">0</span> <span class="number">0</span> <span class="number">0x0</span></div><div class="line">&gt; <span class="number">2017</span>-<span class="number">04</span>-<span class="number">05</span> <span class="number">00</span>:<span class="number">08</span>:<span class="number">02.957846</span>+<span class="number">0800</span> <span class="type">MediaDemo</span>[<span class="number">95980</span>:<span class="number">4515120</span>] [aqme] <span class="number">254</span>: <span class="type">AQDefaultDevice</span> (<span class="number">173</span>): skipping input stream <span class="number">0</span> <span class="number">0</span> <span class="number">0x0</span></div><div class="line">&gt; <span class="number">2017</span>-<span class="number">04</span>-<span class="number">05</span> <span class="number">00</span>:<span class="number">08</span>:<span class="number">04.966414</span>+<span class="number">0800</span> <span class="type">MediaDemo</span>[<span class="number">95980</span>:<span class="number">4515120</span>] [aqme] <span class="number">254</span>: <span class="type">AQDefaultDevice</span> (<span class="number">173</span>): skipping input stream <span class="number">0</span> <span class="number">0</span> <span class="number">0x0</span></div><div class="line">&gt;</div></pre></td></tr></table></figure>
+</blockquote>
+<p>&gt;</p>
+<blockquote>
+<p>可以在 <strong>Scheme</strong> -&gt; <strong>Arguments</strong> -&gt; <strong>Environment Variables</strong> 中添加 <strong>name</strong>： “<em>OS_ACTIVITY_MODE</em> “，<strong>value</strong>为 <em>disable</em> ，系统就不会打印这些额外的信息。</p>
+</blockquote>
+<h3 id="二、设置类别、模式、选项"><a href="#二、设置类别、模式、选项" class="headerlink" title="二、设置类别、模式、选项"></a>二、设置类别、模式、选项</h3><p>在激活 <code>AVAudioSession</code> 时，还可以进行一些额外的设置，以满足 App 的音频操作需求。</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> audioSession = <span class="type">AVAudioSession</span>.sharedInstance()</div><div class="line"><span class="keyword">do</span> &#123;</div><div class="line">	<span class="keyword">if</span> #available(iOS <span class="number">10.0</span>, *) &#123;</div><div class="line">		<span class="comment">// iOS 10 以后可以同时设置类别、模式以及选项</span></div><div class="line">		<span class="keyword">try</span> audioSession.setCategory(<span class="type">AVAudioSessionCategoryPlayback</span>, mode: <span class="type">AVAudioSessionModeDefault</span>, options: [.mixWithOthers, .duckOthers])</div><div class="line">	&#125; <span class="keyword">else</span> &#123;</div><div class="line">		<span class="comment">// iOS 10 以前的接口</span></div><div class="line">		<span class="keyword">try</span> audioSession.setCategory(<span class="type">AVAudioSessionCategoryPlayback</span>)</div><div class="line">		<span class="comment">// try audioSession.setCategory(AVAudioSessionCategoryPlayback, with: [.mixWithOthers, .duckOthers])</span></div><div class="line">     &#125;</div><div class="line">     </div><div class="line">     <span class="keyword">try</span> audioSession.setActive(<span class="literal">true</span>)</div><div class="line">&#125; <span class="keyword">catch</span> <span class="keyword">let</span> error &#123;</div><div class="line">     <span class="built_in">print</span>(<span class="string">"error: <span class="subst">\(error)</span>"</span>)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h4 id="七种类别"><a href="#七种类别" class="headerlink" title="七种类别"></a>七种类别</h4><p>可以针对不同的需求选用不同的类别。例如：</p>
+<ul>
+<li><p>当你希望播放音频时中断其他音频，并且在用户切换“静音”开关或者屏幕锁屏时，播放音频需要中断，那么可以考虑使用<code>AVAudioSessionCategorySoloAmbient</code> 类别；</p>
+</li>
+<li><p>或者希望可以后台播放音乐，那么可以考虑使用 <code>AVAudioSessionCategoryPlayback</code> ；</p>
+</li>
+<li><p>或者要做一个音频聊天的App，需要录音的同时能听到对方的讲话，那么可以使用 <code>AVAudioSessionCategoryPlayAndRecord</code> 。</p>
+</li>
+</ul>
+<p>每种类别的特性可以参照下表：</p>
+<table>
+<thead>
+<tr>
+<th>关联类型</th>
+<th>说明</th>
+<th>是否需要输入</th>
+<th>是否需要输出</th>
+<th>是否可以混音</th>
+<th>可以后台记录或播放</th>
+<th>响应静音开关</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AVAudioSessionCategoryAmbient</td>
+<td>可以同其他音频混音播放</td>
+<td>✘</td>
+<td>√</td>
+<td>√</td>
+<td>✘</td>
+<td>√</td>
+</tr>
+<tr>
+<td>AVAudioSessionCategorySoloAmbient</td>
+<td>独占播放，会使其他音频静音</td>
+<td>✘</td>
+<td>√</td>
+<td>✘</td>
+<td>✘</td>
+<td>√</td>
+</tr>
+<tr>
+<td>AVAudioSessionCategoryPlayback</td>
+<td>可后台播放，可混音播放</td>
+<td>✘</td>
+<td>√</td>
+<td>√</td>
+<td>√</td>
+<td>✘</td>
+</tr>
+<tr>
+<td>AVAudioSessionCategoryRecord</td>
+<td>录音模式</td>
+<td>√</td>
+<td>✘</td>
+<td>✘</td>
+<td>√</td>
+<td>✘</td>
+</tr>
+<tr>
+<td>AVAudioSessionCategoryPlayAndRecord</td>
+<td>可以录音也可以播放</td>
+<td>√</td>
+<td>√</td>
+<td>√</td>
+<td>√</td>
+<td>✘</td>
+</tr>
+<tr>
+<td>AVAudioSessionCategoryAudioProcessing</td>
+<td>硬件解码音频，不能播放和录音</td>
+<td>✘</td>
+<td>✘</td>
+<td>✘</td>
+<td>✘</td>
+<td>✘</td>
+</tr>
+<tr>
+<td>AVAudioSessionCategoryMultiRoute</td>
+<td>多种输入输出，例如耳机、USB设备同时播放</td>
+<td>√</td>
+<td>√</td>
+<td>✘</td>
+<td>√</td>
+<td>✘</td>
+</tr>
+</tbody>
+</table>
+<p>使用 <code>AVAudioSessionCategoryMultiRoute</code> 的前提输入/输出必须限定为以下几种：<br>Input</p>
+<ul>
+<li>AVAudioSessionPortUSBAudio</li>
+<li>AVAudioSessionPortHeadsetMic</li>
+<li>AVAudioSessionPortBuiltInMic</li>
+</ul>
+<p>Output</p>
+<ul>
+<li>AVAudioSessionPortUSBAudio</li>
+<li>AVAudioSessionPortLineOut</li>
+<li>AVAudioSessionPortHeadphones</li>
+<li>AVAudioSessionPortHDMI</li>
+<li>AVAudioSessionPortBuiltInSpeaker</li>
+</ul>
+<p>如果不进行额外的设置，默认的音频会话类别是 <code>AVAudioSessionCategorySoloAmbient</code> 。</p>
+<p>如果需要支持后台播放，那么除了需要将类别设置为<code>AVAudioSessionCategoryPlayback</code> 外，还需要在 <strong>Background Mode</strong> 中勾选 <strong>Audio, AirPlay and Picture in Picture</strong>。</p>
+<img src="/2017/04/04/AVFAudio-iOS音频播放/background_modes.png" alt="Background Mode" title="Background Mode">
+<p>设备支持的类别可以通过 <code>availableCategories</code> 属性（iOS 9之后才支持）获取，可以通过这个属性判断待设置的类别设备是否支持，例如不支持音频输入的设备中，<code>AVAudioSessionCategoryRecord</code> 类别不会生效。</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> audioSession = <span class="type">AVAudioSession</span>.sharedInstance()</div><div class="line"></div><div class="line"><span class="keyword">if</span> #available(iOS <span class="number">9.0</span>, *) &#123;</div><div class="line">	<span class="keyword">if</span> audioSession.availableCategories.<span class="built_in">contains</span>(<span class="type">AVAudioSessionCategoryPlayAndRecord</span>) &#123;</div><div class="line">		<span class="keyword">try</span>? audioSession.setCategory(<span class="type">AVAudioSessionCategoryPlayAndRecord</span>)</div><div class="line">	&#125; <span class="keyword">else</span> &#123;</div><div class="line">         <span class="keyword">try</span>? audioSession.setCategory(<span class="type">AVAudioSessionCategoryPlayback</span>)</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>获取当前类别</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> currentAudioSessionCategory = <span class="type">AVAudioSession</span>.sharedInstance().category</div></pre></td></tr></table></figure>
+<h4 id="八种模式"><a href="#八种模式" class="headerlink" title="八种模式"></a>八种模式</h4><p>类别可以定义App的基本音频操作行为，而模式可以细化音频会话，从而进一步定义App的音频操作。</p>
+<table>
+<thead>
+<tr>
+<th>模式</th>
+<th>兼容的类别</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AVAudioSessionModeDefault</td>
+<td>All</td>
+<td>默认模式，适用于所有类别，并将设备设置为一般用途</td>
+</tr>
+<tr>
+<td>AVAudioSessionModeVoiceChat</td>
+<td>AVAudioSessionCategoryPlayAndRecord</td>
+<td>用于IP通话（VoIP）App，该模式可以设置选项 <code>AVAudioSessionCategoryOptionAllowBluetooth</code>。音频路由合集会优化语音聊天体验。使用内置麦克风时，系统会自动选择内置麦克风的最佳组合进行语音聊天。</td>
+</tr>
+<tr>
+<td>AVAudioSessionModeGameChat</td>
+<td>AVAudioSessionCategoryPlayAndRecord</td>
+<td>适用于游戏App，该模式会由 <code>GameKie</code> 的 <code>GKVoiceChat</code> 对象自动设置，而不要手动设置，游戏聊天模式使用的参数与视频模式相同</td>
+</tr>
+<tr>
+<td>AVAudioSessionModeVideoRecording</td>
+<td>AVAudioSessionCategoryPlayAndRecord<br> AVAudioSessionCategoryRecord</td>
+<td>适用于视频录制的App。使用 <code>AVCaptureSession</code> 的API可以更好的控制输入和输出。例如设置 <code>automaticallyConfiguresApplicationAudioSession</code> 属性会自动选择最佳的设备和相机</td>
+</tr>
+<tr>
+<td>AVAudioSessionModeMoviePlayback</td>
+<td>AVAudioSessionCategoryPlayback</td>
+<td>适用于播放电影的App</td>
+</tr>
+<tr>
+<td>AVAudioSessionModeMeasurement</td>
+<td>AVAudioSessionCategoryPlayAndRecord<br> AVAudioSessionCategoryRecord<br> AVAudioSessionCategoryPlayback</td>
+<td>减少设备在处理音频 I/O 的信号量时的影响。输入信号通过设备的主麦克风转换</td>
+</tr>
+<tr>
+<td>AVAudioSessionModeVideoChat</td>
+<td>AVAudioSessionCategoryPlayAndRecord</td>
+<td>用于视频聊天App，该模式可以设置选项 <code>AVAudioSessionCategoryOptionAllowBluetooth</code> 和 <code>AVAudioSessionCategoryOptionDefaultToSpeaker</code>。音频路由合集会优化语音聊天体验。使用内置麦克风时，系统会自动选择内置麦克风的最佳组合进行视频聊天。</td>
+</tr>
+<tr>
+<td>AVAudioSessionModeSpokenAudio (iOS 9)</td>
+<td>AVAudioSessionCategoryPlayback</td>
+<td>适用于连续播报语音（例如天气语音）时，在另一个App（如导航应用）播放语音提示时暂停音频（通过 AudioSessionInterruption 的方式）而不是混合或混淆（mixes or ducks）。该模式可以设置选项 <code>AVAudioSessionCategoryOptionInterruptSpokenAudioAndMixWithOthers</code>。</td>
+</tr>
+</tbody>
+</table>
+<p>苹果官方建议语音聊天或视频聊天的App也使用 <strong>Voice-Processing I/O</strong> 音频单元，<strong>Voice-Processing I/O</strong> 为 VoIP 提供了包括自动增益校正、语音处理调整等功能，详细参照 <a href="https://developer.apple.com/library/content/documentation/MusicAudio/Conceptual/AudioUnitHostingGuide_iOS/UsingSpecificAudioUnits/UsingSpecificAudioUnits.html#//apple_ref/doc/uid/TP40009492-CH17-SW6" target="_blank" rel="external">Audio Unit Hosting Guide for iOS</a></p>
+<p>设备支持的模式可以通过 <code>availableModes</code> 属性（iOS 9之后才支持）获取，可以通过这个属性判断待设置的类别设备是否支持，例如不支持音频输入的设备中，<code>AVAudioSessionModeVideoRecording</code> 模式不会生效。</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> audioSession = <span class="type">AVAudioSession</span>.sharedInstance()</div><div class="line"></div><div class="line"><span class="keyword">if</span> #available(iOS <span class="number">9.0</span>, *) &#123;</div><div class="line">	<span class="keyword">if</span> audioSession.availableModes.<span class="built_in">contains</span>(<span class="type">AVAudioSessionModeVideoRecording</span>) &#123;</div><div class="line">		<span class="keyword">try</span>? audioSession.setCategory(<span class="type">AVAudioSessionCategoryPlayAndRecord</span>)</div><div class="line">		<span class="keyword">try</span>? audioSession.setMode(<span class="type">AVAudioSessionModeVideoRecording</span>)</div><div class="line">	&#125; <span class="keyword">else</span> &#123;</div><div class="line">         <span class="keyword">try</span>? audioSession.setCategory(<span class="type">AVAudioSessionCategoryPlayback</span>)</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>获取当前模式</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> currentAudioSessionMode = <span class="type">AVAudioSession</span>.sharedInstance().mode</div></pre></td></tr></table></figure>
+<h4 id="七种选项"><a href="#七种选项" class="headerlink" title="七种选项"></a>七种选项</h4><p>通过设置 <code>AVAudioSessionCategoryOptions</code> 可以微调音频会话类别的默认行为。</p>
+<table>
+<thead>
+<tr>
+<th>选项</th>
+<th>兼容的类别</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>mixWithOthers</td>
+<td>AVAudioSessionCategoryPlayAndRecord<br> AVAudioSessionCategoryPlayback<br> AVAudioSessionCategoryMultiRoute</td>
+<td>在你的 App 激活 AudioSession 时，允许其他活动的音频 App 是否将被中断或混合</td>
+</tr>
+<tr>
+<td>duckOthers</td>
+<td>AVAudioSessionCategoryAmbient<br> AVAudioSessionCategoryPlayAndRecord<br> AVAudioSessionCategoryPlayback<br> AVAudioSessionCategoryMultiRoute</td>
+<td>在你的 App 激活 AudioSession 时，其他活动的音频 App 将被忽略</td>
+</tr>
+<tr>
+<td>allowBluetooth</td>
+<td>AVAudioSessionCategoryPlayAndRecord<br> AVAudioSessionCategoryPlayAndRecord</td>
+<td>允许 App 更改某些音频会话的默认行为，以蓝牙 HFP 设备显示为可用路由</td>
+</tr>
+<tr>
+<td>defaultToSpeaker</td>
+<td>AVAudioSessionCategoryPlayAndRecord</td>
+<td>允许App更改关于音频路由的 AudioSessionCategory 的一些默认行为</td>
+</tr>
+<tr>
+<td>interruptSpokenAudioAndMixWithOthers (iOS 9)</td>
+<td>AVAudioSessionCategoryPlayAndRecord<br> AVAudioSessionCategoryPlayback<br> AVAudioSessionCategoryMultiRoute</td>
+<td>如果另一个 App 的音频会话模式设置为 <code>AVAudioSessionModeSpokenAudio</code> 时，则当前 App 激活 AudioSession 时其他 App 的音频将被中断。例如你的 App 是天气预报播报应用，在播放天气时将会停止其他App（如导航应用）的任何播报语音</td>
+</tr>
+<tr>
+<td>allowBluetoothA2DP (iOS 10)</td>
+<td>AVAudioSessionCategoryPlayAndRecord</td>
+<td>允许 App 更改某些音频会话的默认行为，以蓝牙 A2DP 设备显示为可用路由。<br> 可以同时设置 <code>AVAudioSessionCategoryOptionAllowBluetooth</code> 和 <code>AVAudioSessionCategoryOptionAllowBluetoothA2DP</code>，在单个蓝牙设备同时支持 HFP 和 A2DP 的情况下，HFP 端口的优先级更高</td>
+</tr>
+<tr>
+<td>allowAirPlay (iOS 10)</td>
+<td>AVAudioSessionCategoryPlayAndRecord</td>
+<td>允许 App 更改某些音频会话的默认行为，以将 AirPlay 设备显示为可用路由。</td>
+</tr>
+</tbody>
+</table>
+<p>获取当前模式</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> currentAudioSessionCategoryOptions = <span class="type">AVAudioSession</span>.sharedInstance().categoryOptions</div></pre></td></tr></table></figure>
+<blockquote>
+<p>关于类别、模式以及选项的选择，可以参照苹果官方的指导方针附录 <a href="https://developer.apple.com/library/content/documentation/Audio/Conceptual/AudioSessionProgrammingGuide/AudioGuidelinesByAppType/AudioGuidelinesByAppType.html#//apple_ref/doc/uid/TP40007875-CH11-SW1" target="_blank" rel="external">Audio Guidelines By App Type</a>。</p>
+</blockquote>
+<h3 id="三、AVAudioPlayer"><a href="#三、AVAudioPlayer" class="headerlink" title="三、AVAudioPlayer"></a>三、AVAudioPlayer</h3><p>在设置好音频的播放行为模式后，就可以通过 <code>AVAudioPlayer</code> 类来控制音频播放。</p>
+<h4 id="初始化播放器"><a href="#初始化播放器" class="headerlink" title="初始化播放器"></a>初始化播放器</h4><p>可以通过文件 URL 或者文件二进制数据的方式初始化播放器：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">do</span> &#123;</div><div class="line">    <span class="keyword">let</span> player = <span class="keyword">try</span> <span class="type">AVAudioPlayer</span>(contentsOf: audioURL)</div><div class="line">    <span class="comment">// let player = try AVAudioPlayer(data: audioData)</span></div><div class="line">&#125; <span class="keyword">catch</span> <span class="keyword">let</span> error &#123;</div><div class="line">    <span class="built_in">print</span>(<span class="string">"AVAudioPlayer initial faild, <span class="subst">\(error.localizedDescription)</span>"</span>)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>另外还有两个扩展初始化方法，需要指定具体的数据格式 UTI，例如 mp3 音频文件可传入 <code>AVFileTypeMPEGLayer3</code> ，其他数据格式可参照 <em>AVMediaFormat.h</em> 头文件。</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="meta">@available</span>(iOS <span class="number">7.0</span>, *)</div><div class="line"><span class="keyword">public</span> <span class="keyword">init</span>(contentsOf url: <span class="type">URL</span>, fileTypeHint utiString: <span class="type">String</span>?) <span class="keyword">throws</span></div><div class="line"></div><div class="line"><span class="meta">@available</span>(iOS <span class="number">7.0</span>, *)</div><div class="line"><span class="keyword">public</span> <span class="keyword">init</span>(data: <span class="type">Data</span>, fileTypeHint utiString: <span class="type">String</span>?) <span class="keyword">throws</span></div></pre></td></tr></table></figure>
+<h4 id="属性"><a href="#属性" class="headerlink" title="属性"></a>属性</h4><figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> audioIsPlaying = audioPlayer.isPlaying    <span class="comment">// 判断当前播放器是否播放</span></div><div class="line">progressSlider.maximumValue = player.duration <span class="comment">// 音频总时长</span></div><div class="line"></div><div class="line">audioPlayer.volume = <span class="number">0.5</span>   <span class="comment">// 声音大小</span></div><div class="line"></div><div class="line">audioPlayer.pan = <span class="number">0.0</span>            <span class="comment">// 设置左右声道，-1.0表示左声道，0.0表示中间，1.0表示右声道</span></div><div class="line">audioPlayer.numberOfChannels = <span class="number">2</span> <span class="comment">// 设置为双声道</span></div><div class="line"></div><div class="line">audioPlayer.enableRate = <span class="literal">true</span> <span class="comment">// 允许改变播放速率，必须在调用 prepareToPlay() 方法前设置</span></div><div class="line">audioPlayer.rate = <span class="number">1.0</span>        <span class="comment">// 1.0表示正常，0.5表示一半的速率，2.0表示两倍速率</span></div><div class="line"></div><div class="line"><span class="comment">// 循环播放次数，0表示只播放一次，1表示播放两次，依次类推，每播放一次-1</span></div><div class="line"><span class="comment">// 负数表示无限循环，除非手动调用 audioPlayer.stop()</span></div><div class="line">audioPlayer.numberOfLoops = <span class="number">3</span></div><div class="line"></div><div class="line"><span class="comment">// 当前播放时长，单位为秒</span></div><div class="line"><span class="comment">// 如果是调用 setter 方法，那么将改变音频的播放位置</span></div><div class="line">progressSlider.value = audioPlayer.currentTime</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">progressSliderValueChanged</span><span class="params">(<span class="number">_</span> sender: UISlider)</span></span> &#123;</div><div class="line">    audioPlayer.currentTime = <span class="type">TimeInterval</span>(sender.value)</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// 设备当前时间，单位为秒，配合 play(atTime:) 方法使用</span></div><div class="line"><span class="keyword">let</span> deviceCurrentTime = audioPlayer.deviceCurrentTime</div><div class="line"></div><div class="line"><span class="comment">// 允许使用音频仪表，必须在调用 prepareToPlay() 方法前设置</span></div><div class="line">audioPlayer.isMeteringEnabled = <span class="literal">true</span></div></pre></td></tr></table></figure>
+<h4 id="播放控制"><a href="#播放控制" class="headerlink" title="播放控制"></a>播放控制</h4><figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 准备播放，如果该音频可以播放则返回 true</span></div><div class="line"><span class="comment">// 当 AVAudioSession 的类别为 AVAudioSessionCategoryRecord 或设备处于不可播放状态时，该方法返回 false</span></div><div class="line">audioPlayer.prepareToPlay()</div><div class="line"></div><div class="line"><span class="comment">// 播放音频，播放成功返回 true, 失败返回 false</span></div><div class="line"><span class="comment">// 当 AVAudioSession 的类别为 AVAudioSessionCategoryRecord 或设备处于不可播放状态时，该方法返回 false</span></div><div class="line">audioPlayer.play()</div><div class="line"></div><div class="line"><span class="keyword">let</span> currentTime = audioPlayer.deviceCurrentTime</div><div class="line">audioPlayer.play(atTime: currentTime + <span class="number">3</span>) <span class="comment">// 3秒后播放</span></div><div class="line"></div><div class="line"><span class="comment">// 暂停播放，可以通过 play() 恢复播放</span></div><div class="line">audioPlayer.pause()</div><div class="line"></div><div class="line"><span class="comment">// 停止播放，通过 play() 无法恢复播放，当 numberOfLoops 为负数时，可以调用该方法停止播放</span></div><div class="line">audioPlayer.stop()</div></pre></td></tr></table></figure>
+<h4 id="监听播放进度"><a href="#监听播放进度" class="headerlink" title="监听播放进度"></a>监听播放进度</h4><p>可以通过定时器的方式来监听音频播放的进度，如果需要显示音频谱，也可以在这个时机刷新视图</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> timer = <span class="type">Timer</span>(timeInterval: <span class="number">0.1</span>, target: <span class="keyword">self</span>, selector: #selector(updatePlayProgress), userInfo: <span class="literal">nil</span>, repeats: <span class="literal">true</span>)</div><div class="line"><span class="type">RunLoop</span>.current.add(timer, forMode: .commonModes)</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">updatePlayProgress</span><span class="params">()</span></span> &#123;</div><div class="line">    progressSlider.value = <span class="type">Float</span>(audioPlayer.currentTime)</div><div class="line">    </div><div class="line">    <span class="keyword">if</span> audioPlayer.isMeteringEnabled &#123;</div><div class="line">        <span class="comment">// 必须先刷新仪表数据</span></div><div class="line">        audioPlayer.updateMeters()</div><div class="line">        </div><div class="line">        <span class="keyword">let</span> peakPower = audioPlayer.peakPower(forChannel: <span class="number">0</span>)</div><div class="line">        <span class="keyword">let</span> averagePower = audioPlayer.averagePower(forChannel: <span class="number">0</span>)</div><div class="line">        </div><div class="line">        <span class="comment">// ....</span></div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h4 id="AVAudioPlayerDelegate"><a href="#AVAudioPlayerDelegate" class="headerlink" title="AVAudioPlayerDelegate"></a>AVAudioPlayerDelegate</h4><p>通过代理方法可以获取音频播放完毕或解码失败的回调方法</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 音频播放完毕，如果 player.numberOfLoops 不为0，音频播放完毕时不会调用该方法</span></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">audioPlayerDidFinishPlaying</span><span class="params">(<span class="number">_</span> player: AVAudioPlayer, successfully flag: Bool)</span></span> &#123;</div><div class="line">    <span class="keyword">switch</span> currentLoopMode &#123;</div><div class="line">    <span class="keyword">case</span> .singleLoop:</div><div class="line">        <span class="comment">// 如果单曲循环回调该方法，那么说明 player 的 numberOfLoops 已经为0，可以重新设置该属性</span></div><div class="line">        player.numberOfLoops = <span class="type">NSIntegerMax</span></div><div class="line">        startPlay(index: currentTrackIndex)</div><div class="line">    <span class="keyword">default</span>:</div><div class="line">        playNextAudio()</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// 解码失败</span></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">audioPlayerDecodeErrorDidOccur</span><span class="params">(<span class="number">_</span> player: AVAudioPlayer, error: Error?)</span></span> &#123;</div><div class="line">    <span class="built_in">print</span>(<span class="string">"audio player decode error: <span class="subst">\(error?.localizedDescription ?? "unknown")</span>"</span>)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<blockquote>
+<p>AVAudioPlayer 不支持流式播放，如果想要实现边播边存的流式播放，可以使用 AVPlayer + AVURLAsset + 自定义AVAssetResourceLoader，将下载的数据通过 AVAssetResourceLoaderDelegate 和 AVPlayer 按需加载</p>
+<p>还有一种方法是使用音频队列服务，通过 Audio File Stream Services（AudioToolbox/AudioFileStream.h） 将网络数据包解析成音频包，最后通过 Audio Queue Services（AudioToolbox/AudioQueue.h）进行播放。</p>
+<p>see <a href="https://developer.apple.com/library/content/qa/qa1634/_index.html#//apple_ref/doc/uid/DTS40008185" target="_blank" rel="external">AVAudioPlayer Streaming Support</a></p>
+</blockquote>
+<h3 id="四、音频会话中断处理"><a href="#四、音频会话中断处理" class="headerlink" title="四、音频会话中断处理"></a>四、音频会话中断处理</h3><p>当来电、闹钟响起或其他 App 激活 <code>AVAudioSession</code> 时，就会发生<strong>音频中断开始</strong>事件。在接收到中断事件时，可以进行状态保存、暂停格式转换、更新用户界面等操作。当用户忽略或挂断电话、忽略或关闭闹钟时，系统会发出<strong>音频中断结束</strong>消息，App可以继续运行，此时可以恢复状态、更新用户界面。</p>
+<h4 id="AVAudioSession-的中断通知"><a href="#AVAudioSession-的中断通知" class="headerlink" title="AVAudioSession 的中断通知"></a>AVAudioSession 的中断通知</h4><p>在 iOS 6 以前，<code>AVAudioSession</code> 中断可以通过代理方法获取，在 iOS 6 以后由通知处理。并在 iOS 8 开始</p>
+<p>监听 <code>AVAudioSessionInterruptionNotification</code> 获得中断事件，在 <code>userInfo</code> 中会携带关于中断/中断结束，以及音频是否可以恢复播放参数 。</p>
+<h5 id="中断事件类型"><a href="#中断事件类型" class="headerlink" title="中断事件类型"></a>中断事件类型</h5><p>通过 <code>AVAudioSessionInterruptionTypeKey</code> 获取 <code>AVAudioSessionInterruptionType</code> 枚举值：</p>
+<ul>
+<li><code>began</code> （value = 1）表示中断事件开始</li>
+<li><code>ended</code> （value = 0）表示中断事件结束</li>
+</ul>
+<p>发生音频中断时，<code>AVAudioPlayer</code> 和 <code>AVAudioRecorder</code> 类，音频队列服务（Audio Queue Services），以及系统声音服务（System Sound Services）会自动暂停播放或录制。</p>
+<p>当使用OpenAL进行音频播放时，实现中断监听器回调函数，就像使用音频队列服务一样。但是中断代码必须另外管理OpenAL上下文。中断后，将OpenAL上下文设置为<code>NULL</code>。中断结束后，将上下文设置为先前状态。</p>
+<h5 id="中断事件选项"><a href="#中断事件选项" class="headerlink" title="中断事件选项"></a>中断事件选项</h5><p>通过 <code>AVAudioSessionInterruptionOptionKey</code> 获取 <code>AVAudioSessionInterruptionOptions</code> 选项：</p>
+<ul>
+<li><code>shouldResume</code> （value = 1）表示音频可以恢复播放或录音</li>
+</ul>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 监听通知</span></div><div class="line"><span class="type">NotificationCenter</span>.<span class="keyword">default</span>.addObserver(<span class="keyword">self</span>, selector: #selector(handleInterruption(<span class="number">_</span>:)), name: .<span class="type">AVAudioSessionInterruption</span>, object: <span class="type">AVAudioSession</span>.sharedInstance())</div><div class="line"></div><div class="line"><span class="comment">// 处理中断情况</span></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">handleInterruption</span><span class="params">(<span class="number">_</span> notification: Notification)</span></span> &#123;</div><div class="line">    <span class="keyword">guard</span></div><div class="line">        <span class="keyword">let</span> userInfo = notification.userInfo,</div><div class="line">        <span class="keyword">let</span> typeNumber = userInfo[<span class="type">AVAudioSessionInterruptionTypeKey</span>] <span class="keyword">as</span>? <span class="type">NSNumber</span>,</div><div class="line">        <span class="keyword">let</span> type = <span class="type">AVAudioSessionInterruptionType</span>(rawValue: typeNumber.uintValue) <span class="keyword">else</span> &#123;</div><div class="line">            <span class="keyword">return</span></div><div class="line">    &#125;</div><div class="line">                </div><div class="line">    <span class="keyword">switch</span> type &#123;</div><div class="line">    <span class="keyword">case</span> .began:</div><div class="line">        <span class="keyword">if</span> audioPlayer.isPlaying &#123;</div><div class="line">            shouldResumePlay = <span class="literal">true</span></div><div class="line">        &#125;</div><div class="line">        </div><div class="line">        updateUIForAudioPause()</div><div class="line">            </div><div class="line">    <span class="keyword">case</span> .ended:</div><div class="line">        <span class="keyword">if</span> <span class="keyword">let</span> optionsNumber = userInfo[<span class="type">AVAudioSessionInterruptionOptionKey</span>] <span class="keyword">as</span>? <span class="type">NSNumber</span> &#123;</div><div class="line">           <span class="keyword">let</span> options = <span class="type">AVAudioSessionInterruptionOptions</span>(rawValue: optionsNumber.uintValue)</div><div class="line">           <span class="keyword">if</span> options.<span class="built_in">contains</span>(.shouldResume), shouldResumePlay &#123;</div><div class="line">                <span class="comment">// 自动恢复播放</span></div><div class="line">                <span class="keyword">if</span> audioPlayer.play() &#123;</div><div class="line">                    <span class="comment">// 更新视图为播放状态</span></div><div class="line">                    updateUIForAudioPlayback()</div><div class="line">                &#125;</div><div class="line">            &#125;</div><div class="line">		&#125;</div><div class="line">		shouldResumePlay = <span class="literal">false</span></div><div class="line">	&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>iOS 10.3 之后还增加了判断应用是否被挂起，而不是被另一个音频会话中断的参数，通过 <code>AVAudioSessionInterruptionWasSuspendedKey</code> 获取，其值是一个 <code>bool</code> 类型的 <code>NSNumber</code> 对象。</p>
+<p>按照官方的说，从iOS 10开始，系统将停用大多数应用程序的音频会话，以响应应用程序进程被暂停。 当应用程序再次开始运行时，系统将收到其会话已被停用的通知。 值得注意的是，由于系统停用会话时暂停应用程序，通知必须及时延迟，并且只有在应用程序再次运行时，才能发送通知。</p>
+<h4 id="AVAudioPlayer-和-AVAudioRecorder-的中断代理方法"><a href="#AVAudioPlayer-和-AVAudioRecorder-的中断代理方法" class="headerlink" title="AVAudioPlayer 和 AVAudioRecorder 的中断代理方法"></a>AVAudioPlayer 和 AVAudioRecorder 的中断代理方法</h4><p><code>AVAudioPlayer</code> 和 <code>AVAudioRecorder</code> 提供各自的中断代理方法，但从 iOS 8 开始均被弃用，统一由 <code>AVAudioSessionInterruptionNotification</code> 处理。</p>
+<h3 id="五、输入输出设备切换处理"><a href="#五、输入输出设备切换处理" class="headerlink" title="五、输入输出设备切换处理"></a>五、输入输出设备切换处理</h3><p>在 App 运行时，用户可能会插入或拔出耳机，使用蓝牙扬声器等，这时会涉及音频硬件路由变更。</p>
+<p>以拔插耳机为例，在 <a href="https://developer.apple.com/ios/human-interface-guidelines/" target="_blank" rel="external">iOS Human Interface Guidelines</a> 中苹果建议，用户在插入耳机时自动切换硬件路由，不会中断音频的播放；当拔出耳机时播放立即停止。</p>
+<img src="/2017/04/04/AVFAudio-iOS音频播放/audio_route_change.png" alt="Handling audio hardware route changes" title="Handling audio hardware route changes">
+<p>这时候可以通过监听 <code>AVAudioSessionRouteChangeNotification</code> 通知来获取硬件路由切换消息，通知消息中的 <code>userInfo</code> 会携带两个参数：1.硬件路由改变的原因；2.上一个路由是什么。</p>
+<h5 id="硬件路由改变的原因"><a href="#硬件路由改变的原因" class="headerlink" title="硬件路由改变的原因"></a>硬件路由改变的原因</h5><p>通过 <code>AVAudioSessionRouteChangeReasonKey</code> 获取切换原因 <code>AVAudioSessionRouteChangeReason</code> 枚举值</p>
+<table>
+<thead>
+<tr>
+<th>切换原因</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>unknown</td>
+<td>原因不明</td>
+</tr>
+<tr>
+<td>newDeviceAvailable</td>
+<td>一个新设备可用（例如：耳机插入）</td>
+</tr>
+<tr>
+<td>oldDeviceUnavailable</td>
+<td>一个旧设备不可用（例如：耳机已拔出）</td>
+</tr>
+<tr>
+<td>categoryChange</td>
+<td>音频类别改变（例如：从 <code>AVAudioSessionCategoryPlayback</code> 变为 <code>AVAudioSessionCategoryPlayAndRecord</code></td>
+</tr>
+<tr>
+<td>override</td>
+<td>route 被重写（例如：<code>AVAudioSessionCategoryPlayAndRecord</code> 类别，输出从默认的接收器变为内置扬声器）</td>
+</tr>
+<tr>
+<td>wakeFromSleep</td>
+<td>设备从休眠中唤醒</td>
+</tr>
+<tr>
+<td>noSuitableRouteForCategory</td>
+<td>没有支持当前类别的输出/输入设备（例如：当前类别为 <code>AVAudioSessionCategoryRecord</code> 却没有可用的输入设备）</td>
+</tr>
+<tr>
+<td>routeConfigurationChange</td>
+<td>输入/输出端口没有改变但其配置的参数改变（例如：端口所选数据源已变更）</td>
+</tr>
+</tbody>
+</table>
+<h5 id="上一个路由是什么"><a href="#上一个路由是什么" class="headerlink" title="上一个路由是什么"></a>上一个路由是什么</h5><p>通过 <code>AVAudioSessionRouteChangePreviousRouteKey</code> 获取更换之前的音频路由信息的描述对象 <code>AVAudioSessionRouteDescription</code> 。</p>
+<p>路由描述对象包括两个属性：<code>inputs</code> 数组和 <code>outputs</code> 数组属性，这两个数组的元素都是 <code>AVAudioSessionPortDescription</code> 类，用于描述路由端口。</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="meta">@available</span>(iOS <span class="number">6.0</span>, *)</div><div class="line">open <span class="class"><span class="keyword">class</span> <span class="title">AVAudioSessionRouteDescription</span> : <span class="title">NSObject</span> </span>&#123;</div><div class="line">    open <span class="keyword">var</span> inputs: [<span class="type">AVAudioSessionPortDescription</span>] &#123; <span class="keyword">get</span> &#125;</div><div class="line">    open <span class="keyword">var</span> outputs: [<span class="type">AVAudioSessionPortDescription</span>] &#123; <span class="keyword">get</span> &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>路由端口描述对象包含了端口类型（）、名称、uid等属性</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="meta">@available</span>(iOS <span class="number">6.0</span>, *)</div><div class="line">open <span class="class"><span class="keyword">class</span> <span class="title">AVAudioSessionPortDescription</span> : <span class="title">NSObject</span> </span>&#123;</div><div class="line">    open <span class="keyword">var</span> portType: <span class="type">String</span> &#123; <span class="keyword">get</span> &#125;</div><div class="line">    open <span class="keyword">var</span> portName: <span class="type">String</span> &#123; <span class="keyword">get</span> &#125;</div><div class="line">    open <span class="keyword">var</span> uid: <span class="type">String</span> &#123; <span class="keyword">get</span> &#125;</div><div class="line"></div><div class="line">	......</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>例如插入耳机时获取上一个路由描述，其中输入设备是内置麦克风，输入设备是内置扬声器：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">&lt;<span class="type">AVAudioSessionRouteDescription</span>: <span class="number">0x17001e4b0</span>, </div><div class="line">  inputs = (</div><div class="line">    <span class="string">"&lt;AVAudioSessionPortDescription: 0x17001e300, type = MicrophoneBuiltIn; name = iPhone 麦克风; UID = Built-In Microphone; selectedDataSource = 前&gt;"</span></div><div class="line">  ); </div><div class="line">  outputs = (</div><div class="line">    <span class="string">"&lt;AVAudioSessionPortDescription: 0x17001ebf0, type = Speaker; name = 扬声器; UID = Speaker; selectedDataSource = (null)&gt;"</span></div><div class="line">  )</div><div class="line">&gt;</div></pre></td></tr></table></figure>
+<p>拔出耳机时的上一个路由描述：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">&lt;<span class="type">AVAudioSessionRouteDescription</span>: <span class="number">0x17401e1b0</span>, </div><div class="line">  inputs = (</div><div class="line">    <span class="string">"&lt;AVAudioSessionPortDescription: 0x17401e220, type = MicrophoneBuiltIn; name = iPhone 麦克风; UID = Built-In Microphone; selectedDataSource = 前&gt;"</span></div><div class="line">  ); </div><div class="line">  outputs = (</div><div class="line">    <span class="string">"&lt;AVAudioSessionPortDescription: 0x174202980, type = Headphones; name = 耳机; UID = Wired Headphones; selectedDataSource = (null)&gt;"</span></div><div class="line">  )</div><div class="line">&gt;</div></pre></td></tr></table></figure>
+<p>在播出耳机时暂停音频播放:</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div></pre></td><td class="code"><pre><div class="line"><span class="type">NotificationCenter</span>.<span class="keyword">default</span>.addObserver(<span class="keyword">self</span>, selector: #selector(handleRouteChange(<span class="number">_</span>:)), name: .<span class="type">AVAudioSessionRouteChange</span>, object: <span class="type">AVAudioSession</span>.sharedInstance())</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">handleRouteChange</span><span class="params">(<span class="number">_</span> notification: Notification)</span></span> &#123;</div><div class="line">    <span class="keyword">guard</span></div><div class="line">        <span class="keyword">let</span> userInfo = notification.userInfo,</div><div class="line">        <span class="keyword">let</span> routeChangeReasonNumber = userInfo[<span class="type">AVAudioSessionRouteChangeReasonKey</span>] <span class="keyword">as</span>? <span class="type">NSNumber</span>,</div><div class="line">        <span class="keyword">let</span> routeChangeReason = <span class="type">AVAudioSessionRouteChangeReason</span>(rawValue: routeChangeReasonNumber.uintValue) <span class="keyword">else</span> &#123;</div><div class="line">        <span class="keyword">return</span> </div><div class="line">    &#125;</div><div class="line">        </div><div class="line">    <span class="keyword">guard</span> <span class="keyword">let</span> previousRoute = userInfo[<span class="type">AVAudioSessionRouteChangePreviousRouteKey</span>] <span class="keyword">as</span>? <span class="type">AVAudioSessionRouteDescription</span>, previousRoute.outputs.<span class="built_in">count</span> &gt; <span class="number">0</span> <span class="keyword">else</span> &#123;</div><div class="line">        <span class="keyword">return</span></div><div class="line">    &#125;</div><div class="line">                </div><div class="line">    <span class="keyword">switch</span> routeChangeReason &#123;</div><div class="line">    <span class="keyword">case</span> .oldDeviceUnavailable:</div><div class="line">        <span class="keyword">let</span> portDescription = previousRoute.outputs.first!</div><div class="line">        <span class="keyword">if</span> portDescription.portType == <span class="string">"Headphones"</span> &#123;</div><div class="line">            audioPlayer.pause()</div><div class="line">            updateUIForAudioPause()</div><div class="line">        &#125;</div><div class="line">    <span class="keyword">default</span>:</div><div class="line">        <span class="comment">// other ...</span></div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="六、辅助音频静音处理"><a href="#六、辅助音频静音处理" class="headerlink" title="六、辅助音频静音处理"></a>六、辅助音频静音处理</h3><p>监听 <code>AVAudioSessionInterruptionNotification</code> 获得可选辅助音频静音的提示事件，在 <code>userInfo</code> 中会携带关于提示参数 ，通过 <code>AVAudioSessionSilenceSecondaryAudioHintTypeKey</code> 获取，其值是 <code>AVAudioSessionSilenceSecondaryAudioHintType</code> 类型：</p>
+<ul>
+<li><code>begin</code> 表示另一个 App 主音频已打开，自己的辅助音频开始静音</li>
+<li><code>end</code> 表示另一个 App 主音频已停止，自己的辅助音频可以恢复</li>
+</ul>
+<p>可配合 <code>AVAudioSession</code> 的 <code>secondaryAudioShouldBeSilencedHint</code><br>属性（iOS 8 以后支持）一起使用，当其他的App正在播放非混音（non-mixable）音频时该属性返回 <code>true</code>。例如使用 <code>AVAudioSessionCategoryAmbient</code> 的游戏 App 可能会使用该属性来决定将其音轨静音，同时保持游戏的声效不静音。</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="meta">@available</span>(iOS <span class="number">6.0</span>, *)</div><div class="line">open <span class="keyword">var</span> isOtherAudioPlaying: <span class="type">Bool</span> &#123; <span class="keyword">get</span> &#125;</div></pre></td></tr></table></figure>
+<p>另外有个属性 <code>isOtherAudioPlaying</code> 用于判断其他 App 是否播放音频。但苹果建议在 iOS 8 以后使用 <code>secondaryAudioShouldBeSilencedHint</code> 属性来判断。</p>
+<p>因为其他App播放任何音频 <code>isOtherAudioPlaying</code> 就会返回 <code>true</code>，而 <code>secondaryAudioShouldBeSilencedHint</code> 判断其他 App 是否播放的是主音频而不是辅助音频，因此更具有限制性。</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="meta">@available</span>(iOS <span class="number">8.0</span>, *)</div><div class="line">open <span class="keyword">var</span> secondaryAudioShouldBeSilencedHint: <span class="type">Bool</span> &#123; <span class="keyword">get</span> &#125;</div></pre></td></tr></table></figure>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://developer.apple.com/library/content/documentation/Audio/Conceptual/AudioSessionProgrammingGuide/Introduction/Introduction.html#//apple_ref/doc/uid/TP40007875" target="_blank" rel="external">[1] Audio Session Programming Guide</a></p>
+<p><a href="https://developer.apple.com/reference/avfoundation/avaudiosession" target="_blank" rel="external">[2] AVAudioSession Class Reference</a></p>
+<p><a href="https://developer.apple.com/reference/avfoundation/avaudioplayer" target="_blank" rel="external">[3] AVAudioPlayer Class Reference</a></p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/AVFoundation-AVFAudio/" rel="tag"># AVFoundation, AVFAudio</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/04/02/初识AVKit和AVFoundation/" rel="next" title="初识 AVKit & AVFoundation">
+                <i class="fa fa-chevron-left"></i> 初识 AVKit & AVFoundation
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/04/15/AVFAudio-录音/" rel="prev" title="AVFAudio-录音">
+                AVFAudio-录音 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+          
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/icon.JPG"
+               alt="Lee" />
+          <p class="site-author-name" itemprop="name">Lee</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+        
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">4</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/arKenLee" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#介绍"><span class="nav-number">1.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AVFAudio"><span class="nav-number">2.</span> <span class="nav-text">AVFAudio</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#AVAudioSession"><span class="nav-number">2.1.</span> <span class="nav-text">AVAudioSession</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#一、激活音频会话-AVAudioSession"><span class="nav-number">2.2.</span> <span class="nav-text">一、激活音频会话 AVAudioSession</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#二、设置类别、模式、选项"><span class="nav-number">2.3.</span> <span class="nav-text">二、设置类别、模式、选项</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#七种类别"><span class="nav-number">2.3.1.</span> <span class="nav-text">七种类别</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#八种模式"><span class="nav-number">2.3.2.</span> <span class="nav-text">八种模式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#七种选项"><span class="nav-number">2.3.3.</span> <span class="nav-text">七种选项</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#三、AVAudioPlayer"><span class="nav-number">2.4.</span> <span class="nav-text">三、AVAudioPlayer</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#初始化播放器"><span class="nav-number">2.4.1.</span> <span class="nav-text">初始化播放器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#属性"><span class="nav-number">2.4.2.</span> <span class="nav-text">属性</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#播放控制"><span class="nav-number">2.4.3.</span> <span class="nav-text">播放控制</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#监听播放进度"><span class="nav-number">2.4.4.</span> <span class="nav-text">监听播放进度</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AVAudioPlayerDelegate"><span class="nav-number">2.4.5.</span> <span class="nav-text">AVAudioPlayerDelegate</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#四、音频会话中断处理"><span class="nav-number">2.5.</span> <span class="nav-text">四、音频会话中断处理</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#AVAudioSession-的中断通知"><span class="nav-number">2.5.1.</span> <span class="nav-text">AVAudioSession 的中断通知</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#中断事件类型"><span class="nav-number">2.5.1.1.</span> <span class="nav-text">中断事件类型</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#中断事件选项"><span class="nav-number">2.5.1.2.</span> <span class="nav-text">中断事件选项</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AVAudioPlayer-和-AVAudioRecorder-的中断代理方法"><span class="nav-number">2.5.2.</span> <span class="nav-text">AVAudioPlayer 和 AVAudioRecorder 的中断代理方法</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#五、输入输出设备切换处理"><span class="nav-number">2.6.</span> <span class="nav-text">五、输入输出设备切换处理</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#硬件路由改变的原因"><span class="nav-number">2.6.0.1.</span> <span class="nav-text">硬件路由改变的原因</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#上一个路由是什么"><span class="nav-number">2.6.0.2.</span> <span class="nav-text">上一个路由是什么</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#六、辅助音频静音处理"><span class="nav-number">2.7.</span> <span class="nav-text">六、辅助音频静音处理</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">3.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Lee</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Muse
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+</body>
+</html>

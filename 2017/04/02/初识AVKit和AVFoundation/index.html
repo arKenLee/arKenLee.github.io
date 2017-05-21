@@ -1,0 +1,764 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="AVKit, AVFoundation," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0" />
+
+
+
+
+
+
+<meta name="description" content="介绍AVFoundation 是一套关于多媒体数据的框架，可以用它来创建、编辑或者重新编码媒体文件，包括音频、视频、图像识别等。
+AVKit 是建立在 AVFoudation 和 UIKit 之上的框架，该框架提供一个简易的播放器界面，让开发者更简单的实现播放音频和视频功能。
+框架结构
+最顶层的 AVKit 包含了用于播放音视频的视图控制器 AVPlayerViewController ，该控制器">
+<meta property="og:type" content="article">
+<meta property="og:title" content="初识 AVKit & AVFoundation">
+<meta property="og:url" content="https://arKenLee.github.io/2017/04/02/初识AVKit和AVFoundation/index.html">
+<meta property="og:site_name" content="Ken’s Notes">
+<meta property="og:description" content="介绍AVFoundation 是一套关于多媒体数据的框架，可以用它来创建、编辑或者重新编码媒体文件，包括音频、视频、图像识别等。
+AVKit 是建立在 AVFoudation 和 UIKit 之上的框架，该框架提供一个简易的播放器界面，让开发者更简单的实现播放音频和视频功能。
+框架结构
+最顶层的 AVKit 包含了用于播放音视频的视图控制器 AVPlayerViewController ，该控制器">
+<meta property="og:image" content="https://arKenLee.github.io/2017/04/02/初识AVKit和AVFoundation/frameworks_block_diagram.png">
+<meta property="og:image" content="https://arKenLee.github.io/2017/04/02/初识AVKit和AVFoundation/play_video.png">
+<meta property="og:image" content="https://arKenLee.github.io/2017/04/02/初识AVKit和AVFoundation/play_audio.png">
+<meta property="og:image" content="https://arKenLee.github.io/2017/04/02/初识AVKit和AVFoundation/picture_in_picture.png">
+<meta property="og:updated_time" content="2017-05-21T04:24:08.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="初识 AVKit & AVFoundation">
+<meta name="twitter:description" content="介绍AVFoundation 是一套关于多媒体数据的框架，可以用它来创建、编辑或者重新编码媒体文件，包括音频、视频、图像识别等。
+AVKit 是建立在 AVFoudation 和 UIKit 之上的框架，该框架提供一个简易的播放器界面，让开发者更简单的实现播放音频和视频功能。
+框架结构
+最顶层的 AVKit 包含了用于播放音视频的视图控制器 AVPlayerViewController ，该控制器">
+<meta name="twitter:image" content="https://arKenLee.github.io/2017/04/02/初识AVKit和AVFoundation/frameworks_block_diagram.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://arKenLee.github.io/2017/04/02/初识AVKit和AVFoundation/"/>
+
+
+
+
+
+  <title> 初识 AVKit & AVFoundation | Ken’s Notes </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ken’s Notes</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Keep Calm and Carry On</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="https://arKenLee.github.io/2017/04/02/初识AVKit和AVFoundation/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Lee">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/icon.JPG">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ken’s Notes">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                初识 AVKit & AVFoundation
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-04-02T16:05:05+08:00">
+                2017-04-02
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Media/" itemprop="url" rel="index">
+                    <span itemprop="name">Media</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p><code>AVFoundation</code> 是一套关于多媒体数据的框架，可以用它来创建、编辑或者重新编码媒体文件，包括音频、视频、图像识别等。</p>
+<p><code>AVKit</code> 是建立在 <code>AVFoudation</code> 和 <code>UIKit</code> 之上的框架，该框架提供一个简易的播放器界面，让开发者更简单的实现播放音频和视频功能。</p>
+<h2 id="框架结构"><a href="#框架结构" class="headerlink" title="框架结构"></a>框架结构</h2><img src="/2017/04/02/初识AVKit和AVFoundation/frameworks_block_diagram.png" alt="AVFoundation stack on iOS" title="AVFoundation stack on iOS">
+<p>最顶层的 <code>AVKit</code> 包含了用于播放音视频的视图控制器 <code>AVPlayerViewController</code> ，该控制器在 iOS 8 后可以使用，用于取代 <code>MPMoviePlayerViewController</code> 。在 iOS 9 中加入 <code>AVPictureInPictureController</code> 用于以“画中画”的形式播放视频。</p>
+<p><code>AVKit</code> 的主要功能由 <code>AVFoundation</code> 实现，<code>AVFoundation</code> 包含多媒体数据获取、视频播放、编辑等功能，其中还包括一个用于处理音频的子框架 <code>AVFAudio</code> 。</p>
+<p><code>AVFoundation</code> 的核心功能由 <code>CoreMedia</code>、<code>CoreAudio</code>、<code>CoreVideo</code>、<code>CoreAnimation</code> 等底层框架提供实现，这些框架提供了 C 级别接口以及媒体数据的结构和描述。</p>
+<p>苹果推荐尽量使用高级别的框架。例如，仅仅需要播放视频功能，但不需要在交互上有太多设计，那么可以直接使用 <code>AVKit</code> 中的 <code>AVPlayerViewController</code> 即可。或者需要拍照或录制视频功能，但不需要裁剪和编辑时可以直接使用 <code>UIKit</code> 中的 <code>UIImagePickerController</code> 。当需要定制一些内容时才考虑使用底层的框架实现。</p>
+<h2 id="AVFoundation"><a href="#AVFoundation" class="headerlink" title="AVFoundation"></a>AVFoundation</h2><p><code>AVFoundation</code> 的功能很强大，其最常用的功能之一就是媒体播放。</p>
+<p>这套框架支持播放主流格式的视频、音频，还可以通过 HTTP Live Streaming 远程播放。在播放时可以显示字幕、切换音频等，甚至还可以在播放过程中对媒体数据进行实时处理。</p>
+<h3 id="AVPlayer"><a href="#AVPlayer" class="headerlink" title="AVPlayer"></a>AVPlayer</h3><p><code>AVFoundation</code> 中最常用的一个类就是 <code>AVPlayer</code> ，通过这个播放器类可以播放远程或者本地的音视频文件。</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> player = <span class="type">AVPlayer</span>(url: url)</div></pre></td></tr></table></figure>
+<p>如果仅仅是播放音频，此时只需要调用 <code>play</code> 方法就可以了</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 开始播放</span></div><div class="line">player.play()</div></pre></td></tr></table></figure>
+<h3 id="AVPlayerItem"><a href="#AVPlayerItem" class="headerlink" title="AVPlayerItem"></a>AVPlayerItem</h3><p>除了通过 URL 初始化 <code>AVPlayer</code> 外还可以通过 <code>AVPlayerItem</code> 实例对象初始化，<code>AVPlayerItem</code> 提供了播放单元数据。</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> playerItem = <span class="type">AVPlayerItem</span>(url: url)</div><div class="line"><span class="keyword">let</span> player = <span class="type">AVPlayer</span>(playerItem: playerItem)</div></pre></td></tr></table></figure>
+<p>除了直接通过 URL 加载 AVPlayerItem 外，还可以使用 AVAsset 或子类 AVURLAsset 初始化：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> asset = <span class="type">AVURLAsset</span>(url: url, options: <span class="literal">nil</span>)</div><div class="line"><span class="keyword">let</span> playerItem2 = <span class="type">AVPlayerItem</span>(asset: asset)</div><div class="line"></div><div class="line"><span class="comment">// 在 item 状态变为 AVPlayerItemStatusReadyToPlay 之前，数组中的每个key对应的值自动被底层的AVAsset自动加载</span></div><div class="line"><span class="keyword">let</span> assetKeysRequiredToPlay = [<span class="string">"playable"</span>, <span class="string">"hasProtectedContent"</span>]</div><div class="line"><span class="keyword">let</span> playerItem3 = <span class="type">AVPlayerItem</span>(asset: asset, automaticallyLoadedAssetKeys:assetKeysRequiredToPlay)</div></pre></td></tr></table></figure>
+<h3 id="AVPlayerLayer"><a href="#AVPlayerLayer" class="headerlink" title="AVPlayerLayer"></a>AVPlayerLayer</h3><p><code>AVPlayer</code> 并不涉及用户界面，如果需要显示视频，那么需要把 <code>AVPlayer</code> 放到 <code>AVPlayerLayer</code> 中。</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> playerLayer = <span class="type">AVPlayerLayer</span>(player: player)</div><div class="line">playerLayer.frame = <span class="keyword">self</span>.view.bounds</div><div class="line"><span class="keyword">self</span>.view.layer.addSublayer(playerLayer)</div><div class="line"></div><div class="line"><span class="comment">// 开始播放</span></div><div class="line">player.play()</div></pre></td></tr></table></figure>
+<h3 id="三者关系"><a href="#三者关系" class="headerlink" title="三者关系"></a>三者关系</h3><p>如果以 MVC 来划分，<code>AVPlayerItem</code> 属于 <strong>Model</strong> 层，它提供了播放的数据来源；<code>AVPlayerLayer</code> 属于 <strong>View</strong> 层，负责向用户展现视频画面；<code>AVPlayer</code> 属于 <strong>Controller</strong> 层，负责控制音视频播放，Item 与 Layer 之间的数据交换等。</p>
+<h2 id="AVKit"><a href="#AVKit" class="headerlink" title="AVKit"></a>AVKit</h2><p><code>AVKit</code> 是建立在 <code>AVFoudation</code> 和 <code>UIKit</code> 之上的框架，该框架提供一个简易的播放器界面，会根据播放的内容进行自动适配。并且还可以显示和隐藏字幕，显示导航章节标记等。</p>
+<p>在 iOS 8 以前，播放视频的最简便方法就是通过 <code>MediaPlayer</code> 框架的 <code>MPMoviePlayerViewController</code> 类实现，该类是基于 <code>AVFoundation</code> 实现，但阻隔了 <code>AVFoundation</code> 的高级功能使用。在 iOS 8 以后 <code>AVKit</code> 提供了<code>AVPlayerViewController</code> 来替代它，并且在 iOS 9 时废弃了 <code>MPMoviePlayerViewController</code> 。</p>
+<h3 id="AVPlayerViewController"><a href="#AVPlayerViewController" class="headerlink" title="AVPlayerViewController"></a>AVPlayerViewController</h3><p>使用 <code>AVPLayer</code> 需要做许多的额外工作，如果对播放交互没有太多要求，那么可以使用 <code>AVKit</code> 提供的<code>AVPlayerViewController</code> ，只要设置一个 <code>AVPlayer</code> 对象就可以播放本地或远程的视频或者音频文件。</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">guard</span> <span class="keyword">let</span> fileURL = <span class="type">Bundle</span>.main.url(forResource: <span class="string">"samplemovie"</span>, withExtension: <span class="string">"mov"</span>) <span class="keyword">else</span> &#123;</div><div class="line">	<span class="built_in">print</span>(<span class="string">"samplemovie.mov not found"</span>)</div><div class="line">	<span class="keyword">return</span></div><div class="line">&#125;</div><div class="line">        </div><div class="line"><span class="keyword">let</span> playerViewController = <span class="type">AVPlayerViewController</span>()</div><div class="line">playerViewController.player = <span class="type">AVPlayer</span>(url: fileURL)</div><div class="line"></div><div class="line"><span class="comment">// 这里不使用 push 跳转，否则导航栏会遮挡 AVPlayerViewController 上方的控制栏</span></div><div class="line"><span class="keyword">self</span>.present(playerViewController, animated: <span class="literal">true</span>, completion: <span class="literal">nil</span>)</div></pre></td></tr></table></figure>
+<img src="/2017/04/02/初识AVKit和AVFoundation/play_video.png" alt="Use AVPlayerViewController to play video" title="Use AVPlayerViewController to play video">
+<img src="/2017/04/02/初识AVKit和AVFoundation/play_audio.png" alt="Use AVPlayerViewController to play audio" title="Use AVPlayerViewController to play audio">
+<p>其他属性</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 是否显示顶部和底部的控制栏，默认为 true</span></div><div class="line">open <span class="keyword">var</span> showsPlaybackControls: <span class="type">Bool</span></div><div class="line"></div><div class="line"><span class="comment">// 视频显示样式，包含三种：AVLayerVideoGravityResizeAspect, AVLayerVideoGravityResizeAspectFill, AVLayerVideoGravityResize</span></div><div class="line"><span class="comment">// 默认为 AVLayerVideoGravityResizeAspect</span></div><div class="line">open <span class="keyword">var</span> videoGravity: <span class="type">String</span></div><div class="line"></div><div class="line"><span class="comment">// 当返回 true 时表示视频第一帧已经加载就绪</span></div><div class="line">open <span class="keyword">var</span> isReadyForDisplay: <span class="type">Bool</span> &#123; <span class="keyword">get</span> &#125;</div><div class="line"></div><div class="line"><span class="comment">// 视频显示位置和大小，通常在第一帧加载完毕后才确定</span></div><div class="line">open <span class="keyword">var</span> videoBounds: <span class="type">CGRect</span> &#123; <span class="keyword">get</span> &#125;</div><div class="line"></div><div class="line"><span class="comment">// 如果需要添加自定义的控件，那么可以在这个视图上添加</span></div><div class="line"><span class="comment">// 这个视图位与视频内容之上和控制栏之下，在视频内容出现时才初始化</span></div><div class="line">open <span class="keyword">var</span> contentOverlayView: <span class="type">UIView</span>? &#123; <span class="keyword">get</span> &#125;</div><div class="line"></div><div class="line"><span class="comment">// 是否允许“画中画”模式播放，默认为 true, iOS 9 新增属性</span></div><div class="line">open <span class="keyword">var</span> allowsPictureInPicturePlayback: <span class="type">Bool</span></div><div class="line"></div><div class="line"><span class="comment">// 是否将当前播放信息更新到控制中心，如果设置为 true，那么控制中心将会显示当前播放的内容</span></div><div class="line"><span class="comment">// 通过控制中心可以控制内容的播放/暂停、快进/快退等，</span></div><div class="line"><span class="comment">// 默认为 true, iOS 10 新增属性</span></div><div class="line">open <span class="keyword">var</span> updatesNowPlayingInfoCenter: <span class="type">Bool</span></div><div class="line"></div><div class="line"><span class="comment">// 目前代理方法仅与“画中画”模式播放相关，iOS 9 新增属性</span></div><div class="line"><span class="keyword">weak</span> open <span class="keyword">var</span> delegate: <span class="type">AVPlayerViewControllerDelegate</span>?</div></pre></td></tr></table></figure>
+<h3 id="AVPictureInPictureController"><a href="#AVPictureInPictureController" class="headerlink" title="AVPictureInPictureController"></a>AVPictureInPictureController</h3><p>使用 <code>AVPictureInPictureController</code> 以浮动窗口的形式播放视频，不过目前仅支持iPad，iPhone上无法初始化这个类。</p>
+<h4 id="查看是否支持-AVPictureInPictureController"><a href="#查看是否支持-AVPictureInPictureController" class="headerlink" title="查看是否支持 AVPictureInPictureController"></a>查看是否支持 AVPictureInPictureController</h4><p>使用该类有三个前提条件：</p>
+<ol>
+<li>当前设备是 <strong>iPad</strong>；</li>
+<li>开启 <strong>Background Modes</strong> 并勾选 <strong>Audio, AirPlay, and Picture in Pictur</strong></li>
+<li>将 <code>AVAudioSession</code> 的类别设置为 <code>AVAudioSessionCategoryPlayback</code> 或者 <code>AVAudioSessionCategoryPlayAndRecord</code> </li>
+</ol>
+<p>可以通过类方法 <code>isPictureInPictureSupported</code> 检查是否支持 <code>AVPictureInPictureController</code> ，上面三个前提条件只要有一个不满足就返回 <code>false</code> 。</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> pictureInPicturePossible = <span class="type">AVPictureInPictureController</span>.pictureInPicturePossible</div></pre></td></tr></table></figure>
+<h4 id="初始化"><a href="#初始化" class="headerlink" title="初始化"></a>初始化</h4><p>初始化 <code>AVPictureInPictureController</code> 仅需要一个 <code>AVPlayerLayer</code> 即可:</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">setupPictureInPicturePlayback</span><span class="params">()</span></span> &#123;</div><div class="line">	<span class="keyword">if</span> <span class="type">AVPictureInPictureController</span>.isPictureInPictureSupported() &#123;</div><div class="line">		pictureInPictureController = <span class="type">AVPictureInPictureController</span>(playerLayer: playerView.playerLayer)</div><div class="line">		pictureInPictureController.delegate = <span class="keyword">self</span></div><div class="line">	&#125;</div><div class="line">	<span class="keyword">else</span> &#123;</div><div class="line">		pictureInPictureButton.isEnabled = <span class="literal">false</span></div><div class="line">	&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>需要注意的是，在初始化后如果改变 <code>AVAudioSession</code> 的类别为 <code>AVAudioSessionCategoryPlayback</code> 或 <code>AVAudioSessionCategoryPlayAndRecord</code> 以外的选项，那么会导致“画中画”模式不可用，可以通过实例对象的 <code>isPictureInPicturePossible</code> 属性判断是否可用</p>
+<p>由于 <code>AVAudioSession</code> 可能在未知情况下改变，因此就需要在 <code>isPictureInPicturePossible</code> 属性改变时实时通知外部，因此可以在初始化的方法中利用KVO观察：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">setupPictureInPicturePlayback</span><span class="params">()</span></span> &#123;</div><div class="line">	<span class="keyword">if</span> <span class="type">AVPictureInPictureController</span>.isPictureInPictureSupported() &#123;</div><div class="line">		pictureInPictureController = <span class="type">AVPictureInPictureController</span>(playerLayer: playerView.playerLayer)</div><div class="line">		pictureInPictureController.delegate = <span class="keyword">self</span></div><div class="line">			</div><div class="line">		addObserver(<span class="keyword">self</span>, forKeyPath: #keyPath(<span class="type">PlayerViewController</span>.pictureInPictureController.pictureInPicturePossible), options: [.new, .initial], context: &amp;playerViewControllerKVOContext)</div><div class="line">	&#125;</div><div class="line">	<span class="keyword">else</span> &#123;</div><div class="line">		pictureInPictureButton.isEnabled = <span class="literal">false</span></div><div class="line">	&#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">private</span> <span class="keyword">var</span> playerViewControllerKVOContext = <span class="number">0</span></div><div class="line"></div><div class="line"><span class="keyword">override</span> <span class="function"><span class="keyword">func</span> <span class="title">observeValue</span><span class="params">(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?)</span></span> &#123;</div><div class="line">	<span class="keyword">guard</span> context == &amp;playerViewControllerKVOContext <span class="keyword">else</span> &#123;</div><div class="line">		<span class="keyword">super</span>.observeValue(forKeyPath: keyPath, of: object, change: change, context: context)</div><div class="line">         <span class="keyword">return</span></div><div class="line">	&#125;</div><div class="line">		</div><div class="line">	<span class="keyword">if</span> keyPath == #keyPath(<span class="type">PlayerViewController</span>.pictureInPictureController.pictureInPicturePossible) &#123;</div><div class="line">		<span class="keyword">let</span> newValue = change?[<span class="type">NSKeyValueChangeKey</span>.newKey] <span class="keyword">as</span>! <span class="type">NSNumber</span></div><div class="line">		<span class="keyword">let</span> isPictureInPicturePossible: <span class="type">Bool</span> = newValue.boolValue</div><div class="line"></div><div class="line">		pictureInPictureButton.isEnabled = isPictureInPicturePossible</div><div class="line">	&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h4 id="“画中画”按钮图标"><a href="#“画中画”按钮图标" class="headerlink" title="“画中画”按钮图标"></a>“画中画”按钮图标</h4><p>如果支持 <code>AVPictureInPictureController</code> 那么可以通过以下两个方法获取系统提供的“画中画”按钮图标</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 开始播放图片</span></div><div class="line"><span class="keyword">let</span> pipStartImage = <span class="type">AVPictureInPictureController</span>.pictureInPictureButtonStartImage(compatibleWith: <span class="literal">nil</span>)</div><div class="line"></div><div class="line"><span class="comment">// 结束播放图片，一般不需要获取这张图片，因为进入“画中画”模式后，播放界面有结束播放的按钮</span></div><div class="line"><span class="keyword">let</span> pipStopImage = <span class="type">AVPictureInPictureController</span>.pictureInPictureButtonStopImage(compatibleWith: <span class="literal">nil</span>)</div></pre></td></tr></table></figure>
+<h4 id="播放状态与播放控制"><a href="#播放状态与播放控制" class="headerlink" title="播放状态与播放控制"></a>播放状态与播放控制</h4><p>通过 <code>isPictureInPictureActive</code> , <code>isPictureInPictureSuspended</code> 属性获取是否正在活动/暂停状态，通过 <code>startPictureInPicture</code> 和 <code>stopPictureInPicture</code> 方法启动/停止“画中画”模式播放</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">if</span> pictureInPictureController.isPictureInPictureActive &#123;</div><div class="line">	<span class="comment">// 启动</span></div><div class="line">	pictureInPictureController.stopPictureInPicture()</div><div class="line">&#125; <span class="keyword">else</span> &#123;</div><div class="line">	<span class="comment">// 停止</span></div><div class="line">	pictureInPictureController.startPictureInPicture()</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<img src="/2017/04/02/初识AVKit和AVFoundation/picture_in_picture.png" alt="picture_in_picture" title="picture_in_picture">
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://developer.apple.com/library/content/documentation/AudioVideo/Conceptual/AVFoundationPG/Articles/00_Introduction.html#//apple_ref/doc/uid/TP40010188" target="_blank" rel="external">[1] AVFoundation Programming Guide</a></p>
+<p><a href="https://developer.apple.com/library/content/documentation/AudioVideo/Conceptual/MediaPlaybackGuide/Contents/Resources/en.lproj/Introduction/Introduction.html#//apple_ref/doc/uid/TP40016757" target="_blank" rel="external">[2] Media Playback Programming Guide</a></p>
+<p><a href="https://developer.apple.com/reference/avfoundation?language=objc" target="_blank" rel="external">[2] AVFoundation API Reference</a></p>
+<p><a href="https://developer.apple.com/reference/avkit" target="_blank" rel="external">[3] AVKit API Reference</a></p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/AVKit-AVFoundation/" rel="tag"># AVKit, AVFoundation</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/03/05/Associated-Object-Method-Swizzling/" rel="next" title="Associated Object & Method Swizzling">
+                <i class="fa fa-chevron-left"></i> Associated Object & Method Swizzling
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/04/04/AVFAudio-iOS音频播放/" rel="prev" title="AVFAudio-iOS音频播放">
+                AVFAudio-iOS音频播放 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+          
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/icon.JPG"
+               alt="Lee" />
+          <p class="site-author-name" itemprop="name">Lee</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+        
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">4</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/arKenLee" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#介绍"><span class="nav-number">1.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#框架结构"><span class="nav-number">2.</span> <span class="nav-text">框架结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AVFoundation"><span class="nav-number">3.</span> <span class="nav-text">AVFoundation</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#AVPlayer"><span class="nav-number">3.1.</span> <span class="nav-text">AVPlayer</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#AVPlayerItem"><span class="nav-number">3.2.</span> <span class="nav-text">AVPlayerItem</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#AVPlayerLayer"><span class="nav-number">3.3.</span> <span class="nav-text">AVPlayerLayer</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#三者关系"><span class="nav-number">3.4.</span> <span class="nav-text">三者关系</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AVKit"><span class="nav-number">4.</span> <span class="nav-text">AVKit</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#AVPlayerViewController"><span class="nav-number">4.1.</span> <span class="nav-text">AVPlayerViewController</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#AVPictureInPictureController"><span class="nav-number">4.2.</span> <span class="nav-text">AVPictureInPictureController</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#查看是否支持-AVPictureInPictureController"><span class="nav-number">4.2.1.</span> <span class="nav-text">查看是否支持 AVPictureInPictureController</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#初始化"><span class="nav-number">4.2.2.</span> <span class="nav-text">初始化</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#“画中画”按钮图标"><span class="nav-number">4.2.3.</span> <span class="nav-text">“画中画”按钮图标</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#播放状态与播放控制"><span class="nav-number">4.2.4.</span> <span class="nav-text">播放状态与播放控制</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">5.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Lee</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Muse
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+</body>
+</html>
