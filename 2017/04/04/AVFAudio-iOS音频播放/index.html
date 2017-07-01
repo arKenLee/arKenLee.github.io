@@ -114,7 +114,7 @@ AVFAudio在 AVFoundation 中有一个子框架 AVFAudio ，包括了 iOS 音">
 <meta property="og:image" content="https://arKenLee.github.io/2017/04/04/AVFAudio-iOS音频播放/aspg_intro.png">
 <meta property="og:image" content="https://arKenLee.github.io/2017/04/04/AVFAudio-iOS音频播放/background_modes.png">
 <meta property="og:image" content="https://arKenLee.github.io/2017/04/04/AVFAudio-iOS音频播放/audio_route_change.png">
-<meta property="og:updated_time" content="2017-05-21T10:53:55.000Z">
+<meta property="og:updated_time" content="2017-07-01T08:06:28.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="AVFAudio-iOS音频播放">
 <meta name="twitter:description" content="介绍iOS 主要提供了以下几种方式来播放音频：
@@ -395,7 +395,7 @@ AVFAudio在 AVFoundation 中有一个子框架 AVFAudio ，包括了 iOS 音">
 <li>集成其他App的音频等等</li>
 </ol>
 <h3 id="一、激活音频会话-AVAudioSession"><a href="#一、激活音频会话-AVAudioSession" class="headerlink" title="一、激活音频会话 AVAudioSession"></a>一、激活音频会话 AVAudioSession</h3><p>在要处理音频相关的行为（例如播放某个音频）之前需要激活 <code>AVAudioSession</code> ，通过 <code>setActive</code> 或 <code>setActive:with:</code> 方法激活或停用音频会话。</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> audioSession = <span class="type">AVAudioSession</span>.sharedInstance()</div><div class="line"><span class="keyword">do</span> &#123;</div><div class="line">	<span class="keyword">try</span> audioSession.setActive(<span class="literal">true</span>)</div><div class="line">	<span class="comment">// try try audioSession.setActive(true, with: [.notifyOthersOnDeactivation])</span></div><div class="line">&#125; <span class="keyword">catch</span> <span class="keyword">let</span> error &#123;</div><div class="line">	<span class="built_in">print</span>(<span class="string">"set AVAudioSession active failure with error: <span class="subst">\(error)</span>"</span>)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> audioSession = <span class="type">AVAudioSession</span>.sharedInstance()</div><div class="line"><span class="keyword">do</span> &#123;</div><div class="line">	<span class="keyword">try</span> audioSession.setActive(<span class="literal">true</span>)</div><div class="line">	<span class="comment">// try audioSession.setActive(true, with: [.notifyOthersOnDeactivation])</span></div><div class="line">&#125; <span class="keyword">catch</span> <span class="keyword">let</span> error &#123;</div><div class="line">	<span class="built_in">print</span>(<span class="string">"set AVAudioSession active failure with error: <span class="subst">\(error)</span>"</span>)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
 <p>如果设置选项 <code>notifyOthersOnDeactivation</code> ，在App中断已结束（例如打完电话回到app），并且可能会恢复播放时，通过通知回调给App，仅在 <code>AVAudioSession</code> 停用时有效。如果 <code>AVAudioSession</code> 处于激活状态，App中断结束都可以收到通知。</p>
 <p>需要注意的是，这两个设置方法是同步操作，很有可能会阻塞当前线程，因此尽量不要在长时间阻塞的线程去激活音频会话。</p>
 <p>从 iOS 8 开始，在运行或暂停音频文件相关的I/O流（例如录音、格式转换等）过程中，如果将音频会话设置为 <code>false</code> App 将会抛出异常，所以在关闭音频会话之前要确保文件流处于关闭状态。</p>
@@ -435,65 +435,65 @@ AVFAudio在 AVFoundation 中有一个子框架 AVFAudio ，包括了 iOS 音">
 <tr>
 <td>AVAudioSessionCategoryAmbient</td>
 <td>可以同其他音频混音播放</td>
-<td>✘</td>
-<td>√</td>
-<td>√</td>
-<td>✘</td>
-<td>√</td>
+<td>❌</td>
+<td>✅</td>
+<td>✅</td>
+<td>❌</td>
+<td>✅</td>
 </tr>
 <tr>
 <td>AVAudioSessionCategorySoloAmbient</td>
 <td>独占播放，会使其他音频静音</td>
-<td>✘</td>
-<td>√</td>
-<td>✘</td>
-<td>✘</td>
-<td>√</td>
+<td>❌</td>
+<td>✅</td>
+<td>❌</td>
+<td>❌</td>
+<td>✅</td>
 </tr>
 <tr>
 <td>AVAudioSessionCategoryPlayback</td>
 <td>可后台播放，可混音播放</td>
-<td>✘</td>
-<td>√</td>
-<td>√</td>
-<td>√</td>
-<td>✘</td>
+<td>❌</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>❌</td>
 </tr>
 <tr>
 <td>AVAudioSessionCategoryRecord</td>
 <td>录音模式</td>
-<td>√</td>
-<td>✘</td>
-<td>✘</td>
-<td>√</td>
-<td>✘</td>
+<td>✅</td>
+<td>❌</td>
+<td>❌</td>
+<td>✅</td>
+<td>❌</td>
 </tr>
 <tr>
 <td>AVAudioSessionCategoryPlayAndRecord</td>
 <td>可以录音也可以播放</td>
-<td>√</td>
-<td>√</td>
-<td>√</td>
-<td>√</td>
-<td>✘</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>❌</td>
 </tr>
 <tr>
 <td>AVAudioSessionCategoryAudioProcessing</td>
 <td>硬件解码音频，不能播放和录音</td>
-<td>✘</td>
-<td>✘</td>
-<td>✘</td>
-<td>✘</td>
-<td>✘</td>
+<td>❌</td>
+<td>❌</td>
+<td>❌</td>
+<td>❌</td>
+<td>❌</td>
 </tr>
 <tr>
 <td>AVAudioSessionCategoryMultiRoute</td>
 <td>多种输入输出，例如耳机、USB设备同时播放</td>
-<td>√</td>
-<td>√</td>
-<td>✘</td>
-<td>√</td>
-<td>✘</td>
+<td>✅</td>
+<td>✅</td>
+<td>❌</td>
+<td>✅</td>
+<td>❌</td>
 </tr>
 </tbody>
 </table>

@@ -90,7 +90,8 @@
 <meta name="description" content="介绍AVFoundation 是一套关于多媒体数据的框架，可以用它来创建、编辑或者重新编码媒体文件，包括音频、视频、图像识别等。
 AVKit 是建立在 AVFoudation 和 UIKit 之上的框架，该框架提供一个简易的播放器界面，让开发者更简单的实现播放音频和视频功能。
 框架结构
-最顶层的 AVKit 包含了用于播放音视频的视图控制器 AVPlayerViewController ，该控制器">
+
+最顶层的 AVKit 包含了用于播放音视频的视图控制器 AVPlayerViewController ，该控制">
 <meta property="og:type" content="article">
 <meta property="og:title" content="初识 AVKit & AVFoundation">
 <meta property="og:url" content="https://arKenLee.github.io/2017/04/02/初识AVKit和AVFoundation/index.html">
@@ -98,19 +99,22 @@ AVKit 是建立在 AVFoudation 和 UIKit 之上的框架，该框架提供一个
 <meta property="og:description" content="介绍AVFoundation 是一套关于多媒体数据的框架，可以用它来创建、编辑或者重新编码媒体文件，包括音频、视频、图像识别等。
 AVKit 是建立在 AVFoudation 和 UIKit 之上的框架，该框架提供一个简易的播放器界面，让开发者更简单的实现播放音频和视频功能。
 框架结构
-最顶层的 AVKit 包含了用于播放音视频的视图控制器 AVPlayerViewController ，该控制器">
-<meta property="og:image" content="https://arKenLee.github.io/2017/04/02/初识AVKit和AVFoundation/frameworks_block_diagram.png">
+
+最顶层的 AVKit 包含了用于播放音视频的视图控制器 AVPlayerViewController ，该控制">
+<meta property="og:image" content="https://arKenLee.github.io/2017/04/02/初识AVKit和AVFoundation/frameworks_block_diagram_iOS.png">
+<meta property="og:image" content="https://arKenLee.github.io/2017/04/02/初识AVKit和AVFoundation/frameworks_block_diagram_OSX.png">
 <meta property="og:image" content="https://arKenLee.github.io/2017/04/02/初识AVKit和AVFoundation/play_video.png">
 <meta property="og:image" content="https://arKenLee.github.io/2017/04/02/初识AVKit和AVFoundation/play_audio.png">
 <meta property="og:image" content="https://arKenLee.github.io/2017/04/02/初识AVKit和AVFoundation/picture_in_picture.png">
-<meta property="og:updated_time" content="2017-05-21T04:24:08.000Z">
+<meta property="og:updated_time" content="2017-07-01T08:40:22.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="初识 AVKit & AVFoundation">
 <meta name="twitter:description" content="介绍AVFoundation 是一套关于多媒体数据的框架，可以用它来创建、编辑或者重新编码媒体文件，包括音频、视频、图像识别等。
 AVKit 是建立在 AVFoudation 和 UIKit 之上的框架，该框架提供一个简易的播放器界面，让开发者更简单的实现播放音频和视频功能。
 框架结构
-最顶层的 AVKit 包含了用于播放音视频的视图控制器 AVPlayerViewController ，该控制器">
-<meta name="twitter:image" content="https://arKenLee.github.io/2017/04/02/初识AVKit和AVFoundation/frameworks_block_diagram.png">
+
+最顶层的 AVKit 包含了用于播放音视频的视图控制器 AVPlayerViewController ，该控制">
+<meta name="twitter:image" content="https://arKenLee.github.io/2017/04/02/初识AVKit和AVFoundation/frameworks_block_diagram_iOS.png">
 
 
 
@@ -359,7 +363,8 @@ AVKit 是建立在 AVFoudation 和 UIKit 之上的框架，该框架提供一个
       
         <h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p><code>AVFoundation</code> 是一套关于多媒体数据的框架，可以用它来创建、编辑或者重新编码媒体文件，包括音频、视频、图像识别等。</p>
 <p><code>AVKit</code> 是建立在 <code>AVFoudation</code> 和 <code>UIKit</code> 之上的框架，该框架提供一个简易的播放器界面，让开发者更简单的实现播放音频和视频功能。</p>
-<h2 id="框架结构"><a href="#框架结构" class="headerlink" title="框架结构"></a>框架结构</h2><img src="/2017/04/02/初识AVKit和AVFoundation/frameworks_block_diagram.png" alt="AVFoundation stack on iOS" title="AVFoundation stack on iOS">
+<h2 id="框架结构"><a href="#框架结构" class="headerlink" title="框架结构"></a>框架结构</h2><img src="/2017/04/02/初识AVKit和AVFoundation/frameworks_block_diagram_iOS.png" alt="AVFoundation stack on iOS" title="AVFoundation stack on iOS">
+<img src="/2017/04/02/初识AVKit和AVFoundation/frameworks_block_diagram_OSX.png" alt="AVFoundation stack on OSX" title="AVFoundation stack on OSX">
 <p>最顶层的 <code>AVKit</code> 包含了用于播放音视频的视图控制器 <code>AVPlayerViewController</code> ，该控制器在 iOS 8 后可以使用，用于取代 <code>MPMoviePlayerViewController</code> 。在 iOS 9 中加入 <code>AVPictureInPictureController</code> 用于以“画中画”的形式播放视频。</p>
 <p><code>AVKit</code> 的主要功能由 <code>AVFoundation</code> 实现，<code>AVFoundation</code> 包含多媒体数据获取、视频播放、编辑等功能，其中还包括一个用于处理音频的子框架 <code>AVFAudio</code> 。</p>
 <p><code>AVFoundation</code> 的核心功能由 <code>CoreMedia</code>、<code>CoreAudio</code>、<code>CoreVideo</code>、<code>CoreAnimation</code> 等底层框架提供实现，这些框架提供了 C 级别接口以及媒体数据的结构和描述。</p>

@@ -97,12 +97,16 @@
 <meta property="og:description" content="介绍在 runtime 的实际应用中，关联对象再常见不过了，它提供一种“键—对象”形式的存取机制，在不改变源码的情况下，达到在运行时为类添加“成员变量”的目的。通过关联对象还可以解决在分类中不能为类添加新成员变量的问题。
 除了关联对象，runtime 运用较多的就是方法调配，通过方法调配可以互相交换两个方法的实现（IMP）。
 关联对象（Associated Object）关联对象可以为指定的实例对">
-<meta property="og:updated_time" content="2017-03-05T17:04:54.000Z">
+<meta property="og:image" content="https://arKenLee.github.io/2017/03/05/Associated-Object-Method-Swizzling/compile_souces.png">
+<meta property="og:image" content="https://arKenLee.github.io/2017/03/05/Associated-Object-Method-Swizzling/swizzling1.png">
+<meta property="og:image" content="https://arKenLee.github.io/2017/03/05/Associated-Object-Method-Swizzling/swizzling2.png">
+<meta property="og:updated_time" content="2017-07-01T07:59:25.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Associated Object & Method Swizzling">
 <meta name="twitter:description" content="介绍在 runtime 的实际应用中，关联对象再常见不过了，它提供一种“键—对象”形式的存取机制，在不改变源码的情况下，达到在运行时为类添加“成员变量”的目的。通过关联对象还可以解决在分类中不能为类添加新成员变量的问题。
 除了关联对象，runtime 运用较多的就是方法调配，通过方法调配可以互相交换两个方法的实现（IMP）。
 关联对象（Associated Object）关联对象可以为指定的实例对">
+<meta name="twitter:image" content="https://arKenLee.github.io/2017/03/05/Associated-Object-Method-Swizzling/compile_souces.png">
 
 
 
@@ -402,7 +406,27 @@
 <p>这里在 <code>myLowercaseString</code> 中调用了 <code>myLowercaseString</code> 方法并不会造成死循环，这是因为在运行期 <code>myLowercaseString</code> 的 <code>IMP</code> 实际上对应的是原来的 <code>lowercaseString</code> 的 <code>IMP</code> ，因此这里调用的方法实际上还是原来的转小写方法，并不会造成死循环。</p>
 <h3 id="为什么在-load-方法中交换，并且在-dispatch-once-中执行？"><a href="#为什么在-load-方法中交换，并且在-dispatch-once-中执行？" class="headerlink" title="为什么在 load 方法中交换，并且在 dispatch_once 中执行？"></a>为什么在 <code>load</code> 方法中交换，并且在 <code>dispatch_once</code> 中执行？</h3><p>在程序加载时，系统将每个类加载到内存中分配空间，此时优先将类定义中的方法添加到方法调度表（methodList）中，而类别中的方法是后添加（<em>各类别的添加顺序与.m文件连接顺序有关，可在项目工程的 Targets -&gt; Build Phases 的 Compile Sources 中查看文件顺序</em>），由于方法的添加采用的是头插法，因此类别的方法在”消息发送“的搜索过程中优先找到，造成类别方法会重写掉类定义的同名方法的现象。而 <code>load</code> 方法是在类加载到内存时，由 runtime 负责向类（按继承顺序递归）及类别调用，可以保证每个 <code>load</code> 方法都被调用一次。</p>
 <p>由于使用方法调配会影响该类的全局状态，因此要尽量避免出现冲突或者遗漏的情况。在 <code>load</code> 方法中进行方法调配可以确保方法交换不会遗漏，在 <code>load</code> 方法中使用 GCD 的 <code>dispatch_once</code> 确保该段方法调配仅执行一次，保证方法交换的一致性。</p>
-<h3 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h3><p>方法调配固然强大，但是这种”黑魔法“有一些潜在危险，如果使用得当可以让代码有质的飞跃，如果使用不当则会产生无法预知的后果。由于方法调配牵一发而动全身，如果滥用该特性会令代码变得不易理解且难以维护，还会有”方法命名重复“的问题，因此在使用方法调配时要十分谨慎。</p>
+<h3 id="分类的加载顺序"><a href="#分类的加载顺序" class="headerlink" title="分类的加载顺序"></a>分类的加载顺序</h3><p>如果有两个分类 <code>NSString+Add1</code> 和 <code>NSString+Add2</code> 都交换了 <code>lowercaseString</code> 这两个分类的加载顺序是如何？</p>
+<h4 id="1-文件的加载顺序"><a href="#1-文件的加载顺序" class="headerlink" title="1.文件的加载顺序"></a>1.文件的加载顺序</h4><p>在工程的 <strong>Build Phases</strong> —&gt; <strong>Compile Sources</strong> 可以看到文件的顺序，这里的文件决定了程序加载文件的顺序。以下图为例，程序在加载时会先加载<code>NSString+Add1</code> 然后再加载 <code>NSString+Add2</code>：</p>
+<img src="/2017/03/05/Associated-Object-Method-Swizzling/compile_souces.png" alt="Compile Sources" title="Compile Sources">
+<h4 id="2-交换同一个方法"><a href="#2-交换同一个方法" class="headerlink" title="2.交换同一个方法"></a>2.交换同一个方法</h4><p>假设这两个分类都交换了同一个方法<code>lowercaseString</code> ：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div></pre></td><td class="code"><pre><div class="line">// NSString+Add1</div><div class="line">@implementation NSString (Add1)</div><div class="line"></div><div class="line">+ (void)load &#123;</div><div class="line">    static dispatch_once_t onceToken;</div><div class="line">    dispatch_once(&amp;onceToken, ^&#123;</div><div class="line">        Method orgMethodImp = class_getInstanceMethod(self, @selector(lowercaseString));</div><div class="line">        Method dstMethodImp = class_getInstanceMethod(self, @selector(myLowercaseString1));</div><div class="line">        method_exchangeImplementations(orgMethodImp, dstMethodImp);</div><div class="line">    &#125;);</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (NSString *)myLowercaseString1 &#123;</div><div class="line">    NSLog(@&quot;NSString+Add1 %@&quot;, NSStringFromSelector(_cmd));</div><div class="line">    NSString *lowercaseStr = [self myLowercaseString1];</div><div class="line">    return lowercaseStr;</div><div class="line">&#125;</div><div class="line"></div><div class="line">@end</div><div class="line">  </div><div class="line">// NSString+Add2</div><div class="line">@implementation NSString (Add2)</div><div class="line"></div><div class="line">+ (void)load &#123;</div><div class="line">    static dispatch_once_t onceToken;</div><div class="line">    dispatch_once(&amp;onceToken, ^&#123;</div><div class="line">        Method orgMethodImp = class_getInstanceMethod(self, @selector(lowercaseString));</div><div class="line">        Method dstMethodImp = class_getInstanceMethod(self, @selector(myLowercaseString2));</div><div class="line">        method_exchangeImplementations(orgMethodImp, dstMethodImp);</div><div class="line">    &#125;);</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (NSString *)myLowercaseString2 &#123;</div><div class="line">    NSLog(@&quot;NSString+Add2 %@&quot;, NSStringFromSelector(_cmd));</div><div class="line">    NSString *lowercaseStr = [self myLowercaseString2];</div><div class="line">    return lowercaseStr;</div><div class="line">&#125;</div><div class="line"></div><div class="line">@end</div></pre></td></tr></table></figure>
+<p>程序先加载<code>NSString+Add1</code> 于是<code>SEL</code> 和 <code>IMP</code> 的对应关系如下：</p>
+<img src="/2017/03/05/Associated-Object-Method-Swizzling/swizzling1.png" alt="NSString+Add1" title="NSString+Add1">
+<p>然后程序加载<code>NSString+Add2</code> ，最终 <code>SEL</code> 和 <code>IMP</code> 的对应关系如下：</p>
+<img src="/2017/03/05/Associated-Object-Method-Swizzling/swizzling2.png" alt="NSString+Add2" title="NSString+Add2">
+<p>此时我们在外部执行</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">NSString *str = @&quot;Hello, World&quot;;</div><div class="line">NSLog(@&quot;%@ -&gt; %@&quot;, str, str.lowercaseString);</div></pre></td></tr></table></figure>
+<p>当调用 <code>-lowercaseString</code> 方法时执行顺序如下：</p>
+<ol>
+<li>找到 <code>myLowercaseString2</code> 的函数指针并执行</li>
+<li>在 <code>myLowercaseString2</code> 方法中会调用 <code>[self myLowercaseString2]</code> ，找到 <code>myLowercaseString1</code> 的函数指针执行</li>
+<li>在 <code>myLowercaseString1</code> 方法中会调用 <code>[self myLowercaseString1]</code> ，找到原始的 <code>lowercaseString</code> 的函数指针执行</li>
+<li>返回小写字符串</li>
+</ol>
+<p>最终输出如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">&gt;&gt; NSString+Add2 lowercaseString</div><div class="line">&gt;&gt; NSString+Add1 myLowercaseString2</div><div class="line">&gt;&gt; Hello, World -&gt; hello, world</div></pre></td></tr></table></figure>
+<h3 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h3><p>方法调配固然强大，但是这种”黑魔法“有一些潜在危险，如果使用得当可以让代码有质的飞跃，如果使用不当则会产生无法预知的后果。方法调配牵一发而动全身，尤其多次交换同一个方法，如果滥用该特性会令代码变得不易理解且难以维护，还会有”方法命名重复“的问题，因此在使用方法调配时要十分谨慎。</p>
 
       
     </div>
@@ -587,7 +611,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#介绍"><span class="nav-number">1.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#关联对象（Associated-Object）"><span class="nav-number">2.</span> <span class="nav-text">关联对象（Associated Object）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#方法调配（Method-Swizzling）"><span class="nav-number">3.</span> <span class="nav-text">方法调配（Method Swizzling）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#为什么在-load-方法中交换，并且在-dispatch-once-中执行？"><span class="nav-number">3.1.</span> <span class="nav-text">为什么在 load 方法中交换，并且在 dispatch_once 中执行？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#注意事项"><span class="nav-number">3.2.</span> <span class="nav-text">注意事项</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#介绍"><span class="nav-number">1.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#关联对象（Associated-Object）"><span class="nav-number">2.</span> <span class="nav-text">关联对象（Associated Object）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#方法调配（Method-Swizzling）"><span class="nav-number">3.</span> <span class="nav-text">方法调配（Method Swizzling）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#为什么在-load-方法中交换，并且在-dispatch-once-中执行？"><span class="nav-number">3.1.</span> <span class="nav-text">为什么在 load 方法中交换，并且在 dispatch_once 中执行？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#分类的加载顺序"><span class="nav-number">3.2.</span> <span class="nav-text">分类的加载顺序</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-文件的加载顺序"><span class="nav-number">3.2.1.</span> <span class="nav-text">1.文件的加载顺序</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-交换同一个方法"><span class="nav-number">3.2.2.</span> <span class="nav-text">2.交换同一个方法</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#注意事项"><span class="nav-number">3.3.</span> <span class="nav-text">注意事项</span></a></li></ol></li></ol></div>
             
 
           </div>

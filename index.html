@@ -485,7 +485,58 @@
       
         
           
-            
+            <h2 id="AVFAudio"><a href="#AVFAudio" class="headerlink" title="AVFAudio"></a>AVFAudio</h2><p><code>AVFAudio</code> 框架除了提供音频播放器类 <code>AVAudioPlayer</code> 外，还提供一个处理录音的类 <code>AVAudioRecorder</code> 。</p>
+<p><a href="https://github.com/arKenLee/MediaDemo" target="_blank" rel="external">Demo</a></p>
+<h2 id="AVAudioRecorder"><a href="#AVAudioRecorder" class="headerlink" title="AVAudioRecorder"></a>AVAudioRecorder</h2><p>使用 <code>AVAudioRecorder</code> 类可以实现录音功能，支持设置比特率、采样率、转换质量等。录制音频的来源可以是内置麦克风、耳机麦克风等设备。</p>
+<h3 id="设置-AVAudioSession-与询问权限"><a href="#设置-AVAudioSession-与询问权限" class="headerlink" title="设置 AVAudioSession 与询问权限"></a>设置 AVAudioSession 与询问权限</h3><p>在使用 <code>AVAudioRecorder</code> 之前需要设置 <code>AVAudioSession</code> 的类别为<code>AVAudioSessionCategoryRecord</code> 或者<code>AVAudioSessionCategoryPlayAndRecord</code> ，并且还要取得麦克风使用的权限。</p>
+<p>需要特别注意的是，如果录音文件流没有关闭，此时设置 <code>AVAudioSession</code> 的 <code>active</code> 为 <code>false</code> 在 iOS8及以上的版本会直接Crash。</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 设置类别</span></div><div class="line"><span class="keyword">let</span> audioSession = <span class="type">AVAudioSession</span>.sharedInstance()</div><div class="line">        </div><div class="line"><span class="keyword">if</span> #available(iOS <span class="number">9</span>, *) &#123;</div><div class="line">    <span class="keyword">if</span> !audioSession.availableCategories.<span class="built_in">contains</span>(<span class="type">AVAudioSessionCategoryRecord</span>) &#123;</div><div class="line">        <span class="built_in">print</span>(<span class="string">"当前设备不支持录音功能"</span>)</div><div class="line">        <span class="keyword">return</span></div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">if</span> audioSession.category != <span class="type">AVAudioSessionCategoryRecord</span> &#123;</div><div class="line">    <span class="keyword">do</span> &#123;</div><div class="line">        <span class="keyword">try</span> audioSession.setCategory(<span class="type">AVAudioSessionCategoryRecord</span>)</div><div class="line">    &#125; <span class="keyword">catch</span> <span class="keyword">let</span> error &#123;</div><div class="line">        <span class="built_in">print</span>(<span class="string">"设置录音类别失败: <span class="subst">\(error.localizedDescription)</span>"</span>)</div><div class="line">        <span class="keyword">return</span></div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// 询问权限</span></div><div class="line">audioSession.requestRecordPermission &#123; (granted: <span class="type">Bool</span>) <span class="keyword">in</span></div><div class="line">    <span class="keyword">if</span> (!granted) &#123;</div><div class="line">    	<span class="built_in">print</span>(<span class="string">"用户拒绝授权使用麦克风"</span>)</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<blockquote>
+<p>在播放录音文件时，如果类别为 AVAudioSessionCategoryPlayAndRecord，播放的声音将会很小声，改为使用 AVAudioSessionCategoryRecord 类别即可。</p>
+<p>关于 AVAudioSession 的详细参数设置，可以参考上一篇文章 <a href="https://arkenlee.github.io/2017/04/04/AVFAudio-iOS音频播放/">AVFAudio-iOS音频播放</a>。</p>
+</blockquote>
+<h3 id="初始化和配置AVAudioRecorder"><a href="#初始化和配置AVAudioRecorder" class="headerlink" title="初始化和配置AVAudioRecorder"></a>初始化和配置AVAudioRecorder</h3><p>初始化 <code>AVAudioRecorder</code> 需要传入保存录音文件的本地路径，如果路径文件存在那么在调用<code>prepareToRecord()</code> 方法时会覆盖原文件。另外还需要一个参数设置的字典或者一种格式（AVAudioFormat）。</p>
+<h4 id="1-参数"><a href="#1-参数" class="headerlink" title="1.参数"></a>1.参数</h4><p>可设置参数的字段可以在 <strong>AVAudioSettings.h</strong> 头文件中查看。其中包括设置录音格式（AVFormatIDKey）、声道数（AVNumberOfChannelsKey）、采样率（AVSampleRateKey）等。</p>
+<p>录音编码格式可在 <strong>CoreAudioTypes.h</strong> 头文件中查看，头文件中列出了很多种格式，实际上苹果支持的格式不多。当录音文件需要在多端播放时，只能使用共同的编码格式，例如：aac、mp3、amr等格式。</p>
+<p>需要录制mp3时不能直接 <code>kAudioFormatMPEGLayer3</code> ，只能先录制其他格式的音频再通过其他途径转为 mp3 格式。例如录制一段 AAC 音频然后通过 <a href="https://sourceforge.net/projects/lame/files/lame/3.99/" target="_blank" rel="external">lame</a> 转为 mp3 格式的音频文件。</p>
+<blockquote>
+<p>将 lame 打包成库的教程：<a href="http://blog.csdn.net/cx_wzp/article/details/50911261" target="_blank" rel="external">http://blog.csdn.net/cx_wzp/article/details/50911261</a></p>
+</blockquote>
+<p>其他参数设置：</p>
+<p>a) AVSampleRateKey：采样率，默认为44100</p>
+<p>b) AVNumberOfChannelsKey：声道数</p>
+<p>c) AVEncoderAudioQualityKey：音频编码质量，默认为<code>AVAudioQualityMin</code></p>
+<p>d) AVEncoderBitRateKey：音频编码比特率，单位为Kbps<br>​    16Kbps = 电话音质<br>　　 24Kbps = 增加电话音质、短波广播、长波广播、欧洲制式中波广播<br>　　 40Kbps = 美国制式中波广播<br>　　 56Kbps = 话音<br>　　 64Kbps = 增加话音（手机铃声最佳比特率设定值、手机单声道MP3播放器最佳设定值）<br>　　 112Kbps = FM调频立体声广播<br>　　 128Kbps = 磁带（手机立体声MP3播放器最佳设定值、低档MP3播放器最佳设定值）<br>　　 160Kbps = HIFI高保真（中高档MP3播放器最佳设定值）<br>　　 192Kbps = CD（高档MP3播放器最佳设定值）<br>　　 256Kbps = Studio音乐工作室（音乐发烧友适用）</p>
+<h4 id="2-属性"><a href="#2-属性" class="headerlink" title="2.属性"></a>2.属性</h4><p>a) isRecording：是否正在录音，只读属性；</p>
+<p>b) url：录音文件URL，只读属性；</p>
+<p>c) settings：录音文件配置，只读属性；</p>
+<p>d) delegate：代理；</p>
+<p>e) currentTime：录音时长，仅在录音状态有效，只读属性</p>
+<p>f) deviceCurrentTime：输入设备时长，配合 <code>record(atTime:)</code> 方法使用，只读属性</p>
+<p>g) isMeteringEnabled：是否使用仪表数据，默认为 <code>false</code>。如果需要获取录音的分贝大小，需要设置为<code>true</code>。</p>
+<p>h) channelAssignments：当前录音的通道，仅iOS有该属性。</p>
+<h4 id="示例"><a href="#示例" class="headerlink" title="示例"></a>示例</h4><figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> filename = <span class="string">"record.m4a"</span></div><div class="line"><span class="keyword">let</span> location = <span class="type">URL</span>(fileURLWithPath: <span class="type">NSTemporaryDirectory</span>()).appendingPathComponent(filename)</div><div class="line"></div><div class="line"><span class="comment">// Linear PCM 数据是最原始的无损音频数据，但文件体积过大是明显的缺点</span></div><div class="line"><span class="comment">// 44.1kHz，16bit，双音道的音频文件，每分钟的数据量约为 44.1*16*2*60kbit=10.3M</span></div><div class="line"><span class="keyword">let</span> settings: [<span class="type">String</span>: <span class="type">Any</span>] = [</div><div class="line">    <span class="type">AVFormatIDKey</span>: kAudioFormatLinearPCM, <span class="comment">// 录音格式</span></div><div class="line">    <span class="type">AVSampleRateKey</span>: <span class="number">11025.0</span>,  <span class="comment">// 采样率，如果不设置默认为 44100</span></div><div class="line">    <span class="type">AVNumberOfChannelsKey</span>: <span class="number">1</span>,  <span class="comment">// 单声道</span></div><div class="line">    </div><div class="line"><span class="comment">//    AVEncoderBitRateKey: 128,  // 比特率值</span></div><div class="line"><span class="comment">//    AVEncoderAudioQualityKey: AVAudioQualityMin, // 编码质量</span></div><div class="line"></div><div class="line"><span class="comment">//    AVLinearPCMBitDepthKey: 8,       // 位深度，Linear PCM 属性，可取的值包括：8, 16, 24, 32。默认为16位</span></div><div class="line"><span class="comment">//    AVLinearPCMIsBigEndianKey: true, // Linear PCM 属性，如果不设置默认 false，即“小端字节序”</span></div><div class="line"><span class="comment">//    AVLinearPCMIsFloatKey: true,     // Linear PCM 属性，如果不设置默认 true</span></div><div class="line"><span class="comment">//    ...</span></div><div class="line">]</div><div class="line"></div><div class="line"><span class="keyword">do</span> &#123;</div><div class="line">    <span class="keyword">let</span> recorder = <span class="keyword">try</span> <span class="type">AVAudioRecorder</span>(url: path, settings: audioSetting)</div><div class="line">    recorder.isMeteringEnabled = <span class="literal">true</span></div><div class="line">    recorder.delegate = <span class="keyword">self</span></div><div class="line">    <span class="keyword">self</span>.audioRecorder = recorder</div><div class="line">&#125; <span class="keyword">catch</span> <span class="keyword">let</span> error &#123;</div><div class="line">    <span class="built_in">print</span>(<span class="string">"初始化录音失败: <span class="subst">\(error.localizedDescription)</span>"</span>)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="录音控制方法"><a href="#录音控制方法" class="headerlink" title="录音控制方法"></a>录音控制方法</h3><h4 id="1-准备录音"><a href="#1-准备录音" class="headerlink" title="1.准备录音"></a>1.准备录音</h4><p>在 <code>AVAudioRecorder</code> 实例第一次录音前，需要先调用一次 <code>prepareToRecord()</code> 方法，此时会创建一个录音文件并准备开始录音。如果设备不支持录音，或者没有麦克风权限，或者 <code>AVAudioSession</code> 设置的类别不支持录音，该方法会返回 <code>false</code> 。</p>
+<h4 id="2-开始录音"><a href="#2-开始录音" class="headerlink" title="2.开始录音"></a>2.开始录音</h4><p>开始录音有4个方法：</p>
+<p>  a) record()，调用该方法会立即开始录音</p>
+<p>  b) record(atTime:)，需要配合<code>deviceCurrentTime</code>属性使用，表示在一段时间后开始录音</p>
+<p>  c) record(forDuration:)，调用该方法会立即开始录音，并且可以限定录音最长时长</p>
+<p>  d) record(atTime:, forDuration:)，同2和3</p>
+<h4 id="3-暂停录音和停止录音"><a href="#3-暂停录音和停止录音" class="headerlink" title="3.暂停录音和停止录音"></a>3.暂停录音和停止录音</h4><p>调用 <code>pause()</code> 方法和 <code>stop()</code> 方法可以分别暂停和停止录音。调用暂停方法可以通过调用4个record方法恢复录音，而一旦调用stop方法就不能再恢复录音了。</p>
+<h4 id="4-获取录音分贝值"><a href="#4-获取录音分贝值" class="headerlink" title="4.获取录音分贝值"></a>4.获取录音分贝值</h4><p>获取录音分贝必须要将 <code>isMeteringEnabled</code> 属性设置为true，并且在获取分贝值前需要调用 <code>updateMeters()</code> 方法刷新数值。然后通过 <code>peakPower(forChannel:)</code> 和 <code>averagePower(forChannel)</code>  方法可以获取指定通道的分贝峰值和平均值。</p>
+<h4 id="5-删除录音文件"><a href="#5-删除录音文件" class="headerlink" title="5.删除录音文件"></a>5.删除录音文件</h4><p>调用 <code>deleteRecording()</code> 方法可以删除录音文件，但只要在停止录音状态才能删除。在删除前必须先判断文件是否存在，如果文件不存在时调用该方法会直接Crash。</p>
+<h4 id="示例-1"><a href="#示例-1" class="headerlink" title="示例"></a>示例</h4><figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 开始录音</span></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">startRecord</span><span class="params">()</span></span> &#123;</div><div class="line">    <span class="keyword">if</span> <span class="keyword">self</span>.audioRecorder.prepareToRecord() &#123;</div><div class="line">        <span class="comment">// 立即录音</span></div><div class="line">        <span class="keyword">if</span> (<span class="keyword">self</span>.audioRecorder.record()) &#123;</div><div class="line">            <span class="built_in">print</span>(<span class="string">"开始录音"</span>)</div><div class="line">            <span class="keyword">self</span>.tiemr = <span class="type">Timer</span>(timeInterval: <span class="number">0.1</span>, target: <span class="keyword">self</span>, selector: #selector(updateRecordUI), userInfo: <span class="literal">nil</span>, repeats: <span class="literal">true</span>)</div><div class="line">            <span class="type">RunLoop</span>.current.add(<span class="keyword">self</span>.tiemr, forMode: .commonModes)</div><div class="line">        &#125; <span class="keyword">else</span> &#123;</div><div class="line">            <span class="built_in">print</span>(<span class="string">"开始录音失败"</span>)</div><div class="line">        &#125;</div><div class="line">        </div><div class="line">        <span class="comment">// 5秒后录音</span></div><div class="line"><span class="comment">//        let deviceCurrentTime = self.audioRecorder.deviceCurrentTime</span></div><div class="line"><span class="comment">//        let fireTime = deviceCurrentTime + 5</span></div><div class="line"><span class="comment">//        if (self.audioRecorder.record(atTime: fireTime)) &#123;</span></div><div class="line"><span class="comment">//            print("5秒后开始录音")</span></div><div class="line"><span class="comment">//        &#125; else &#123;</span></div><div class="line"><span class="comment">//            print("开始录音失败")</span></div><div class="line"><span class="comment">//        &#125;</span></div><div class="line">        </div><div class="line">        <span class="comment">// 最多录制1分钟</span></div><div class="line"><span class="comment">//        let recordDurationLimit: TimeInterval = 60</span></div><div class="line"><span class="comment">//        if (self.audioRecorder.record(forDuration: recordDurationLimit)) &#123;</span></div><div class="line"><span class="comment">//            print("开始录音，最多录制1分钟")</span></div><div class="line"><span class="comment">//        &#125; else &#123;</span></div><div class="line"><span class="comment">//            print("开始录音失败")</span></div><div class="line"><span class="comment">//        &#125;</span></div><div class="line">        </div><div class="line">        <span class="comment">// 5秒后录音，最多录制1分钟</span></div><div class="line"><span class="comment">//        if (self.audioRecorder.record(atTime: fireTime, forDuration: recordDurationLimit)) &#123;</span></div><div class="line"><span class="comment">//            print("5秒后录音，最多录制1分钟")</span></div><div class="line"><span class="comment">//        &#125; else &#123;</span></div><div class="line"><span class="comment">//            print("开始录音失败")</span></div><div class="line"><span class="comment">//        &#125;</span></div><div class="line">    &#125; <span class="keyword">else</span> &#123;</div><div class="line">        <span class="built_in">print</span>(<span class="string">"录音准备失败"</span>)</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// 暂停录音</span></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">pauseRecord</span><span class="params">()</span></span> &#123;</div><div class="line">    <span class="keyword">self</span>.audioRecorder.pause()</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// 停止录音</span></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">stopRecord</span><span class="params">()</span></span> &#123;</div><div class="line">    <span class="keyword">self</span>.audioRecorder.stop()</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// 删除录音文件</span></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">deleteRecordFile</span><span class="params">()</span></span> &#123;</div><div class="line">    <span class="keyword">self</span>.audioRecorder.deleteRecording()</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// 刷新UI</span></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">updateRecordUI</span><span class="params">()</span></span> &#123;</div><div class="line">    <span class="comment">// 在使用分贝属性前需要刷新仪表值</span></div><div class="line">    <span class="keyword">self</span>.audioRecorder.updateMeters()</div><div class="line">    <span class="keyword">let</span> peakPower = audioRecorder.peakPower(forChannel: <span class="number">0</span>)</div><div class="line">    <span class="keyword">let</span> averagePower = audioRecorder.averagePower(forChannel: <span class="number">0</span>)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="代理方法"><a href="#代理方法" class="headerlink" title="代理方法"></a>代理方法</h3><p>与音频播放类似，<code>AVAudioRecorderDelegate</code> 也有两个方法，分别是获取录音结束和录音编码错误的代理方法。</p>
+<p>在调用 <code>stop()</code> 方法后，就会触发 <code>audioRecorderDidFinishRecording(_:successfully:)</code> 代理方法。比如在录音停止后用户可以试听录音文件，此时就可以通过这个代理方法获取停止录音时机并播放。</p>
+<p>当录音编码错误或磁盘空间不足时，会触发 <code>audioRecorderEncodeErrorDidOccur(_:error:)</code> 代理方法，此时可以执行提示用户录音错误等操作。</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">audioRecorderDidFinishRecording</span><span class="params">(<span class="number">_</span> recorder: AVAudioRecorder, successfully flag: Bool)</span></span> &#123;</div><div class="line">    <span class="built_in">print</span>(<span class="string">"录音完毕，可以播放"</span>)</div><div class="line">&#125;</div><div class="line">    </div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">audioRecorderEncodeErrorDidOccur</span><span class="params">(<span class="number">_</span> recorder: AVAudioRecorder, error: Error?)</span></span> &#123;</div><div class="line">    <span class="built_in">print</span>(<span class="string">"录音编码失败, player: <span class="subst">\(recorder)</span>, error: <span class="subst">\(error?.localizedDescription ?? "未知错误")</span>"</span>)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="录音文件拼接"><a href="#录音文件拼接" class="headerlink" title="录音文件拼接"></a>录音文件拼接</h3><p>录音文件在播放状态和暂停状态时是不可以播放的，只有在停止状态才可播放，而一旦录音停止就无法恢复录音。</p>
+<p>如果需要实现在录制一段音频后，点击播放按钮播放录音文件，点击录音按钮继续录音的功能，就需要对录音文件进行拼接。一种做法是每录制一段音频后拼接到上一段录音文件中。</p>
+<p>如果录音文件的目标格式已经转换为mp3格式，那么直接通过<code>NSFileHandle</code> 通过文件偏移量和写入操作即可完成录音拼接。因为mp3可以是无头的音频格式，将音频数据段拼接在一起就可以形成完整的mp3音频文件。如果录音文件的目标格式仍然是 AAC 格式，那么可以使用 <code>AVMutableComposition</code> 和 <code>AVAssetExportSession</code> 实现拼接操作：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">pieceAudio</span><span class="params">(url1: URL, audio2 url2: URL, outputURL: URL, completion: <span class="params">(<span class="params">(Bool)</span></span></span></span>-&gt;<span class="type">Void</span>)?) &#123;</div><div class="line">    </div><div class="line">    <span class="keyword">let</span> fileManager = <span class="type">FileManager</span>.<span class="keyword">default</span></div><div class="line">    </div><div class="line">    <span class="keyword">let</span> audio1Exists = fileManager.fileExists(atPath: url1.path)</div><div class="line">    <span class="keyword">let</span> audio2Exists = fileManager.fileExists(atPath: url2.path)</div><div class="line">    </div><div class="line">    <span class="keyword">guard</span> audio1Exists || audio2Exists <span class="keyword">else</span> &#123;</div><div class="line">        completion?(<span class="literal">false</span>)</div><div class="line">        <span class="keyword">return</span></div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">let</span> composition = <span class="type">AVMutableComposition</span>()</div><div class="line">    </div><div class="line">    <span class="keyword">let</span> audioAsset1 = <span class="type">AVURLAsset</span>(url: url1)</div><div class="line">    <span class="keyword">let</span> audioAsset2 = <span class="type">AVURLAsset</span>(url: url2)</div><div class="line">    </div><div class="line">    <span class="keyword">var</span> timePosition = kCMTimeZero</div><div class="line">    </div><div class="line">    <span class="keyword">if</span> <span class="keyword">let</span> audioAssetTrack1 = audioAsset1.tracks(withMediaType: <span class="type">AVMediaTypeAudio</span>).first &#123;</div><div class="line">        </div><div class="line">        <span class="keyword">let</span> timeRange = <span class="type">CMTimeRangeMake</span>(kCMTimeZero, audioAsset1.duration)</div><div class="line">        <span class="keyword">let</span> track = composition.addMutableTrack(withMediaType: <span class="type">AVMediaTypeAudio</span>, preferredTrackID: <span class="number">0</span>)</div><div class="line">        </div><div class="line">        <span class="keyword">do</span> &#123;</div><div class="line">            <span class="keyword">try</span> track.insertTimeRange(timeRange, of: audioAssetTrack1, at: timePosition)</div><div class="line">            timePosition = audioAsset1.duration</div><div class="line">        &#125; <span class="keyword">catch</span> <span class="keyword">let</span> error &#123;</div><div class="line">            <span class="built_in">print</span>(<span class="string">"插入第一个音轨失败: <span class="subst">\(error.localizedDescription)</span>"</span>)</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">if</span> <span class="keyword">let</span> audioAssetTrack2 = audioAsset2.tracks(withMediaType: <span class="type">AVMediaTypeAudio</span>).first &#123;</div><div class="line">        </div><div class="line">        <span class="keyword">let</span> timeRange = <span class="type">CMTimeRangeMake</span>(kCMTimeZero, audioAsset2.duration)</div><div class="line">        <span class="keyword">let</span> track = composition.addMutableTrack(withMediaType: <span class="type">AVMediaTypeAudio</span>, preferredTrackID: <span class="number">0</span>)</div><div class="line">        </div><div class="line">        <span class="keyword">do</span> &#123;</div><div class="line">            <span class="keyword">try</span> track.insertTimeRange(timeRange, of: audioAssetTrack2, at: timePosition)</div><div class="line">            timePosition = audioAsset2.duration</div><div class="line">        &#125; <span class="keyword">catch</span> <span class="keyword">let</span> error &#123;</div><div class="line">            <span class="built_in">print</span>(<span class="string">"插入第二个音轨失败: <span class="subst">\(error.localizedDescription)</span>"</span>)</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">guard</span> <span class="keyword">let</span> session = <span class="type">AVAssetExportSession</span>(asset: composition, presetName: <span class="type">AVAssetExportPresetAppleM4A</span>) <span class="keyword">else</span> &#123;</div><div class="line">        completion?(<span class="literal">false</span>)</div><div class="line">        <span class="keyword">return</span></div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    session.outputURL = outputURL</div><div class="line">    session.outputFileType = <span class="type">AVFileTypeAppleM4A</span></div><div class="line">    </div><div class="line">    session.exportAsynchronously &#123;</div><div class="line">        <span class="keyword">let</span> success = (session.status == .completed)</div><div class="line">        completion?(success)</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="后记"><a href="#后记" class="headerlink" title="后记"></a>后记</h2><p>可以看出 <code>AVAudioRecorder</code> 的接口设计与 <code>AVAudioPlayer</code> 非常相似，对于中断事件和录音设备改变事件都可以通过通知处理（可参照上一篇文章的处理<a href="https://arkenlee.github.io/2017/04/04/AVFAudio-iOS音频播放/">AVFAudio-iOS音频播放</a>）。</p>
+<p>然而苹果支持的录音文件格式非常有限，通常需要后期处理，如果需要支持多端播放的录音，就要选择共通的文件封装格式和编码格式。</p>
+
           
         
       
@@ -645,7 +696,7 @@
 <li>集成其他App的音频等等</li>
 </ol>
 <h3 id="一、激活音频会话-AVAudioSession"><a href="#一、激活音频会话-AVAudioSession" class="headerlink" title="一、激活音频会话 AVAudioSession"></a>一、激活音频会话 AVAudioSession</h3><p>在要处理音频相关的行为（例如播放某个音频）之前需要激活 <code>AVAudioSession</code> ，通过 <code>setActive</code> 或 <code>setActive:with:</code> 方法激活或停用音频会话。</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> audioSession = <span class="type">AVAudioSession</span>.sharedInstance()</div><div class="line"><span class="keyword">do</span> &#123;</div><div class="line">	<span class="keyword">try</span> audioSession.setActive(<span class="literal">true</span>)</div><div class="line">	<span class="comment">// try try audioSession.setActive(true, with: [.notifyOthersOnDeactivation])</span></div><div class="line">&#125; <span class="keyword">catch</span> <span class="keyword">let</span> error &#123;</div><div class="line">	<span class="built_in">print</span>(<span class="string">"set AVAudioSession active failure with error: <span class="subst">\(error)</span>"</span>)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> audioSession = <span class="type">AVAudioSession</span>.sharedInstance()</div><div class="line"><span class="keyword">do</span> &#123;</div><div class="line">	<span class="keyword">try</span> audioSession.setActive(<span class="literal">true</span>)</div><div class="line">	<span class="comment">// try audioSession.setActive(true, with: [.notifyOthersOnDeactivation])</span></div><div class="line">&#125; <span class="keyword">catch</span> <span class="keyword">let</span> error &#123;</div><div class="line">	<span class="built_in">print</span>(<span class="string">"set AVAudioSession active failure with error: <span class="subst">\(error)</span>"</span>)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
 <p>如果设置选项 <code>notifyOthersOnDeactivation</code> ，在App中断已结束（例如打完电话回到app），并且可能会恢复播放时，通过通知回调给App，仅在 <code>AVAudioSession</code> 停用时有效。如果 <code>AVAudioSession</code> 处于激活状态，App中断结束都可以收到通知。</p>
 <p>需要注意的是，这两个设置方法是同步操作，很有可能会阻塞当前线程，因此尽量不要在长时间阻塞的线程去激活音频会话。</p>
 <p>从 iOS 8 开始，在运行或暂停音频文件相关的I/O流（例如录音、格式转换等）过程中，如果将音频会话设置为 <code>false</code> App 将会抛出异常，所以在关闭音频会话之前要确保文件流处于关闭状态。</p>
@@ -685,65 +736,65 @@
 <tr>
 <td>AVAudioSessionCategoryAmbient</td>
 <td>可以同其他音频混音播放</td>
-<td>✘</td>
-<td>√</td>
-<td>√</td>
-<td>✘</td>
-<td>√</td>
+<td>❌</td>
+<td>✅</td>
+<td>✅</td>
+<td>❌</td>
+<td>✅</td>
 </tr>
 <tr>
 <td>AVAudioSessionCategorySoloAmbient</td>
 <td>独占播放，会使其他音频静音</td>
-<td>✘</td>
-<td>√</td>
-<td>✘</td>
-<td>✘</td>
-<td>√</td>
+<td>❌</td>
+<td>✅</td>
+<td>❌</td>
+<td>❌</td>
+<td>✅</td>
 </tr>
 <tr>
 <td>AVAudioSessionCategoryPlayback</td>
 <td>可后台播放，可混音播放</td>
-<td>✘</td>
-<td>√</td>
-<td>√</td>
-<td>√</td>
-<td>✘</td>
+<td>❌</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>❌</td>
 </tr>
 <tr>
 <td>AVAudioSessionCategoryRecord</td>
 <td>录音模式</td>
-<td>√</td>
-<td>✘</td>
-<td>✘</td>
-<td>√</td>
-<td>✘</td>
+<td>✅</td>
+<td>❌</td>
+<td>❌</td>
+<td>✅</td>
+<td>❌</td>
 </tr>
 <tr>
 <td>AVAudioSessionCategoryPlayAndRecord</td>
 <td>可以录音也可以播放</td>
-<td>√</td>
-<td>√</td>
-<td>√</td>
-<td>√</td>
-<td>✘</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>❌</td>
 </tr>
 <tr>
 <td>AVAudioSessionCategoryAudioProcessing</td>
 <td>硬件解码音频，不能播放和录音</td>
-<td>✘</td>
-<td>✘</td>
-<td>✘</td>
-<td>✘</td>
-<td>✘</td>
+<td>❌</td>
+<td>❌</td>
+<td>❌</td>
+<td>❌</td>
+<td>❌</td>
 </tr>
 <tr>
 <td>AVAudioSessionCategoryMultiRoute</td>
 <td>多种输入输出，例如耳机、USB设备同时播放</td>
-<td>√</td>
-<td>√</td>
-<td>✘</td>
-<td>√</td>
-<td>✘</td>
+<td>✅</td>
+<td>✅</td>
+<td>❌</td>
+<td>✅</td>
+<td>❌</td>
 </tr>
 </tbody>
 </table>
@@ -1123,7 +1174,8 @@
           
             <h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p><code>AVFoundation</code> 是一套关于多媒体数据的框架，可以用它来创建、编辑或者重新编码媒体文件，包括音频、视频、图像识别等。</p>
 <p><code>AVKit</code> 是建立在 <code>AVFoudation</code> 和 <code>UIKit</code> 之上的框架，该框架提供一个简易的播放器界面，让开发者更简单的实现播放音频和视频功能。</p>
-<h2 id="框架结构"><a href="#框架结构" class="headerlink" title="框架结构"></a>框架结构</h2><img src="/2017/04/02/初识AVKit和AVFoundation/frameworks_block_diagram.png" alt="AVFoundation stack on iOS" title="AVFoundation stack on iOS">
+<h2 id="框架结构"><a href="#框架结构" class="headerlink" title="框架结构"></a>框架结构</h2><img src="/2017/04/02/初识AVKit和AVFoundation/frameworks_block_diagram_iOS.png" alt="AVFoundation stack on iOS" title="AVFoundation stack on iOS">
+<img src="/2017/04/02/初识AVKit和AVFoundation/frameworks_block_diagram_OSX.png" alt="AVFoundation stack on OSX" title="AVFoundation stack on OSX">
 <p>最顶层的 <code>AVKit</code> 包含了用于播放音视频的视图控制器 <code>AVPlayerViewController</code> ，该控制器在 iOS 8 后可以使用，用于取代 <code>MPMoviePlayerViewController</code> 。在 iOS 9 中加入 <code>AVPictureInPictureController</code> 用于以“画中画”的形式播放视频。</p>
 <p><code>AVKit</code> 的主要功能由 <code>AVFoundation</code> 实现，<code>AVFoundation</code> 包含多媒体数据获取、视频播放、编辑等功能，其中还包括一个用于处理音频的子框架 <code>AVFAudio</code> 。</p>
 <p><code>AVFoundation</code> 的核心功能由 <code>CoreMedia</code>、<code>CoreAudio</code>、<code>CoreVideo</code>、<code>CoreAnimation</code> 等底层框架提供实现，这些框架提供了 C 级别接口以及媒体数据的结构和描述。</p>
@@ -1364,7 +1416,27 @@
 <p>这里在 <code>myLowercaseString</code> 中调用了 <code>myLowercaseString</code> 方法并不会造成死循环，这是因为在运行期 <code>myLowercaseString</code> 的 <code>IMP</code> 实际上对应的是原来的 <code>lowercaseString</code> 的 <code>IMP</code> ，因此这里调用的方法实际上还是原来的转小写方法，并不会造成死循环。</p>
 <h3 id="为什么在-load-方法中交换，并且在-dispatch-once-中执行？"><a href="#为什么在-load-方法中交换，并且在-dispatch-once-中执行？" class="headerlink" title="为什么在 load 方法中交换，并且在 dispatch_once 中执行？"></a>为什么在 <code>load</code> 方法中交换，并且在 <code>dispatch_once</code> 中执行？</h3><p>在程序加载时，系统将每个类加载到内存中分配空间，此时优先将类定义中的方法添加到方法调度表（methodList）中，而类别中的方法是后添加（<em>各类别的添加顺序与.m文件连接顺序有关，可在项目工程的 Targets -&gt; Build Phases 的 Compile Sources 中查看文件顺序</em>），由于方法的添加采用的是头插法，因此类别的方法在”消息发送“的搜索过程中优先找到，造成类别方法会重写掉类定义的同名方法的现象。而 <code>load</code> 方法是在类加载到内存时，由 runtime 负责向类（按继承顺序递归）及类别调用，可以保证每个 <code>load</code> 方法都被调用一次。</p>
 <p>由于使用方法调配会影响该类的全局状态，因此要尽量避免出现冲突或者遗漏的情况。在 <code>load</code> 方法中进行方法调配可以确保方法交换不会遗漏，在 <code>load</code> 方法中使用 GCD 的 <code>dispatch_once</code> 确保该段方法调配仅执行一次，保证方法交换的一致性。</p>
-<h3 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h3><p>方法调配固然强大，但是这种”黑魔法“有一些潜在危险，如果使用得当可以让代码有质的飞跃，如果使用不当则会产生无法预知的后果。由于方法调配牵一发而动全身，如果滥用该特性会令代码变得不易理解且难以维护，还会有”方法命名重复“的问题，因此在使用方法调配时要十分谨慎。</p>
+<h3 id="分类的加载顺序"><a href="#分类的加载顺序" class="headerlink" title="分类的加载顺序"></a>分类的加载顺序</h3><p>如果有两个分类 <code>NSString+Add1</code> 和 <code>NSString+Add2</code> 都交换了 <code>lowercaseString</code> 这两个分类的加载顺序是如何？</p>
+<h4 id="1-文件的加载顺序"><a href="#1-文件的加载顺序" class="headerlink" title="1.文件的加载顺序"></a>1.文件的加载顺序</h4><p>在工程的 <strong>Build Phases</strong> —&gt; <strong>Compile Sources</strong> 可以看到文件的顺序，这里的文件决定了程序加载文件的顺序。以下图为例，程序在加载时会先加载<code>NSString+Add1</code> 然后再加载 <code>NSString+Add2</code>：</p>
+<img src="/2017/03/05/Associated-Object-Method-Swizzling/compile_souces.png" alt="Compile Sources" title="Compile Sources">
+<h4 id="2-交换同一个方法"><a href="#2-交换同一个方法" class="headerlink" title="2.交换同一个方法"></a>2.交换同一个方法</h4><p>假设这两个分类都交换了同一个方法<code>lowercaseString</code> ：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div></pre></td><td class="code"><pre><div class="line">// NSString+Add1</div><div class="line">@implementation NSString (Add1)</div><div class="line"></div><div class="line">+ (void)load &#123;</div><div class="line">    static dispatch_once_t onceToken;</div><div class="line">    dispatch_once(&amp;onceToken, ^&#123;</div><div class="line">        Method orgMethodImp = class_getInstanceMethod(self, @selector(lowercaseString));</div><div class="line">        Method dstMethodImp = class_getInstanceMethod(self, @selector(myLowercaseString1));</div><div class="line">        method_exchangeImplementations(orgMethodImp, dstMethodImp);</div><div class="line">    &#125;);</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (NSString *)myLowercaseString1 &#123;</div><div class="line">    NSLog(@&quot;NSString+Add1 %@&quot;, NSStringFromSelector(_cmd));</div><div class="line">    NSString *lowercaseStr = [self myLowercaseString1];</div><div class="line">    return lowercaseStr;</div><div class="line">&#125;</div><div class="line"></div><div class="line">@end</div><div class="line">  </div><div class="line">// NSString+Add2</div><div class="line">@implementation NSString (Add2)</div><div class="line"></div><div class="line">+ (void)load &#123;</div><div class="line">    static dispatch_once_t onceToken;</div><div class="line">    dispatch_once(&amp;onceToken, ^&#123;</div><div class="line">        Method orgMethodImp = class_getInstanceMethod(self, @selector(lowercaseString));</div><div class="line">        Method dstMethodImp = class_getInstanceMethod(self, @selector(myLowercaseString2));</div><div class="line">        method_exchangeImplementations(orgMethodImp, dstMethodImp);</div><div class="line">    &#125;);</div><div class="line">&#125;</div><div class="line"></div><div class="line">- (NSString *)myLowercaseString2 &#123;</div><div class="line">    NSLog(@&quot;NSString+Add2 %@&quot;, NSStringFromSelector(_cmd));</div><div class="line">    NSString *lowercaseStr = [self myLowercaseString2];</div><div class="line">    return lowercaseStr;</div><div class="line">&#125;</div><div class="line"></div><div class="line">@end</div></pre></td></tr></table></figure>
+<p>程序先加载<code>NSString+Add1</code> 于是<code>SEL</code> 和 <code>IMP</code> 的对应关系如下：</p>
+<img src="/2017/03/05/Associated-Object-Method-Swizzling/swizzling1.png" alt="NSString+Add1" title="NSString+Add1">
+<p>然后程序加载<code>NSString+Add2</code> ，最终 <code>SEL</code> 和 <code>IMP</code> 的对应关系如下：</p>
+<img src="/2017/03/05/Associated-Object-Method-Swizzling/swizzling2.png" alt="NSString+Add2" title="NSString+Add2">
+<p>此时我们在外部执行</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">NSString *str = @&quot;Hello, World&quot;;</div><div class="line">NSLog(@&quot;%@ -&gt; %@&quot;, str, str.lowercaseString);</div></pre></td></tr></table></figure>
+<p>当调用 <code>-lowercaseString</code> 方法时执行顺序如下：</p>
+<ol>
+<li>找到 <code>myLowercaseString2</code> 的函数指针并执行</li>
+<li>在 <code>myLowercaseString2</code> 方法中会调用 <code>[self myLowercaseString2]</code> ，找到 <code>myLowercaseString1</code> 的函数指针执行</li>
+<li>在 <code>myLowercaseString1</code> 方法中会调用 <code>[self myLowercaseString1]</code> ，找到原始的 <code>lowercaseString</code> 的函数指针执行</li>
+<li>返回小写字符串</li>
+</ol>
+<p>最终输出如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">&gt;&gt; NSString+Add2 lowercaseString</div><div class="line">&gt;&gt; NSString+Add1 myLowercaseString2</div><div class="line">&gt;&gt; Hello, World -&gt; hello, world</div></pre></td></tr></table></figure>
+<h3 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h3><p>方法调配固然强大，但是这种”黑魔法“有一些潜在危险，如果使用得当可以让代码有质的飞跃，如果使用不当则会产生无法预知的后果。方法调配牵一发而动全身，尤其多次交换同一个方法，如果滥用该特性会令代码变得不易理解且难以维护，还会有”方法命名重复“的问题，因此在使用方法调配时要十分谨慎。</p>
 
           
         
