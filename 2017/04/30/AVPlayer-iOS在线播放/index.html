@@ -1,0 +1,827 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="AVFoundation," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0" />
+
+
+
+
+
+
+<meta name="description" content="介绍通过 AVKit 可以轻松实现在线播放音视频，如果需要自定义播放界面则可以通过 AVPlayer + AVPlayerLayer 实现。并且与 AVAudioPlayer 不同，AVPlayer 支持播放本地音频、视频、流媒体数据，功能强大并且可扩展性高。
+AVPlayer 本身只是个控制器，通过 AVPlayerItem （充当播放资源选项）获取可播放的资源，并最终展示在 AVPlayerL">
+<meta property="og:type" content="article">
+<meta property="og:title" content="AVPlayer">
+<meta property="og:url" content="https://arKenLee.github.io/2017/04/30/AVPlayer-iOS在线播放/index.html">
+<meta property="og:site_name" content="Ken’s Notes">
+<meta property="og:description" content="介绍通过 AVKit 可以轻松实现在线播放音视频，如果需要自定义播放界面则可以通过 AVPlayer + AVPlayerLayer 实现。并且与 AVAudioPlayer 不同，AVPlayer 支持播放本地音频、视频、流媒体数据，功能强大并且可扩展性高。
+AVPlayer 本身只是个控制器，通过 AVPlayerItem （充当播放资源选项）获取可播放的资源，并最终展示在 AVPlayerL">
+<meta property="og:updated_time" content="2017-08-25T16:03:40.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="AVPlayer">
+<meta name="twitter:description" content="介绍通过 AVKit 可以轻松实现在线播放音视频，如果需要自定义播放界面则可以通过 AVPlayer + AVPlayerLayer 实现。并且与 AVAudioPlayer 不同，AVPlayer 支持播放本地音频、视频、流媒体数据，功能强大并且可扩展性高。
+AVPlayer 本身只是个控制器，通过 AVPlayerItem （充当播放资源选项）获取可播放的资源，并最终展示在 AVPlayerL">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://arKenLee.github.io/2017/04/30/AVPlayer-iOS在线播放/"/>
+
+
+
+
+
+  <title> AVPlayer | Ken’s Notes </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ken’s Notes</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Keep Calm and Carry On</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="https://arKenLee.github.io/2017/04/30/AVPlayer-iOS在线播放/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Lee">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/icon.JPG">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ken’s Notes">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                AVPlayer
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-04-30T22:46:32+08:00">
+                2017-04-30
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Media/" itemprop="url" rel="index">
+                    <span itemprop="name">Media</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>通过 <code>AVKit</code> 可以轻松实现在线播放音视频，如果需要自定义播放界面则可以通过 <code>AVPlayer</code> + <code>AVPlayerLayer</code> 实现。并且与 <code>AVAudioPlayer</code> 不同，<code>AVPlayer</code> 支持播放本地音频、视频、流媒体数据，功能强大并且可扩展性高。</p>
+<p><code>AVPlayer</code> 本身只是个控制器，通过 <code>AVPlayerItem</code> （充当播放资源选项）获取可播放的资源，并最终展示在 <code>AVPlayerLayer</code> 上。如果以MVC划分：那么 <code>AVPlayerItem</code> 处于 Model 层负责提供数据资源；<code>AVPlayerLayer</code> 处于 View 层负责像用户展示画面；<code>AVPlayer</code> 处于 Controller 层负责两者之间的数据通信，以及管理和控制音视频媒体的播放。</p>
+<p><code>AVPlayerItem</code> 底层的资源则是通过 <code>AVAsset</code> 及其子类加载。其中 <code>AVURLAsset</code> 有个 <code>AVAssetResourceLoader</code> 类型的资源加载器属性，如果有更深层次的缓存需求，可以自定义资源下载管理类，通过 <code>AVAssetResourceLoaderDelegate</code> 将下载的数据回调给<code>AVAssetResourceLoader</code> ，最终实现自定义下载并播放的功能。</p>
+<h2 id="AVPlayer"><a href="#AVPlayer" class="headerlink" title="AVPlayer"></a>AVPlayer</h2><p><code>AVPlayer</code> 是用于管理和控制媒体资源的播放的控制器对象。它提供了控制播放器的传输行为接口。例如播放，暂停，更改播放速度，以及在媒体时间线内的各种时间点。可以使用<code>AVPlayer</code> 播放本地和远程的基于文件的媒体，例如 QuickTime 视频和 MP3 音频文件，以及使用 HTTP Live Streaming 提供的视听媒体。</p>
+<h3 id="AVPlayer-常用属性与方法"><a href="#AVPlayer-常用属性与方法" class="headerlink" title="AVPlayer 常用属性与方法"></a>AVPlayer 常用属性与方法</h3><p><code>AVPlayer</code> 是一个状态不断变化的动态对象，在播放期间的属性改变通知都是在同一个队列中进行，默认情况下是在主线程队列。因此只要是在主线程上注册和注销KVO，就可以放心使用而不用担心线程同步问题。</p>
+<h4 id="1-初始化方法"><a href="#1-初始化方法" class="headerlink" title="1.初始化方法"></a>1.初始化方法</h4><p>可以通过 <code>URL</code> 或者 <code>AVPlayerItem</code> 资源实例化 <code>AVPlayer</code> ，可以是本地资源也可以是网络资源。</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="keyword">init</span>(url <span class="type">URL</span>: <span class="type">URL</span>)</div><div class="line"><span class="keyword">public</span> <span class="keyword">init</span>(playerItem item: <span class="type">AVPlayerItem</span>?)</div></pre></td></tr></table></figure>
+<p>如果是通过 <code>init(url:)</code> 方法实例化，那么内部会隐式创建一个播放项（<code>AVPlayerItem</code> 类）作为 <code>currentPlayItem</code> 属性。 </p>
+<p><code>AVAsset</code> 只是一个关于媒体资源静态方面属性的模型，例如总时长、创建时间。本身并不适合直接通过 <code>AVPlayer</code> 直接播放。如果要播放 <code>AVAsset</code> 资源需要创建一个 <code>AVPlayerItem</code> 实例，该对象可以提供 <code>AVPlayer</code> 播放时所需要的时间、画面等。</p>
+<h4 id="2-基本属性"><a href="#2-基本属性" class="headerlink" title="2.基本属性"></a>2.基本属性</h4><ul>
+<li><strong>status</strong> (key value observable)</li>
+</ul>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">enum</span> <span class="title">AVPlayerStatus</span> : <span class="title">Int</span> </span>&#123;</div><div class="line">    <span class="keyword">case</span> unknown     <span class="comment">// 表示未知的播放器状态，因为还没有尝试加载新的媒体资源</span></div><div class="line">    <span class="keyword">case</span> readyToPlay <span class="comment">// 表示播放器已经准备好播放 AVPlayerItem 资源</span></div><div class="line">    <span class="keyword">case</span> failed      <span class="comment">// 表示播放器因播放错误而无法播放 AVPlayerItem 资源</span></div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// key value observable</span></div><div class="line">open <span class="keyword">var</span> status: <span class="type">AVPlayerStatus</span> &#123; <span class="keyword">get</span> &#125;</div></pre></td></tr></table></figure>
+<p><code>status</code> 表示播放器是否可以播放。当属性值为 <code>.failed</code> 说明播放器不能再用于播放，并且需要重新设置资源。可以使用KVO监听该属性变化。</p>
+<p>此外 <code>AVPlayer</code> 的 <code>currentItem</code> 也提供一个相对应的状态，其类型为 <code>AVPlayerItemStatus</code> 。</p>
+<ul>
+<li><strong>error</strong></li>
+</ul>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">open <span class="keyword">var</span> error: <span class="type">Error</span>? &#123; <span class="keyword">get</span> &#125;</div></pre></td></tr></table></figure>
+<p>当 <code>status</code> 状态为 <code>falied</code> 时，可以通过该属性获取播放失败的原因。如果 <code>status</code> 状态不是 <code>falied</code> 则该属性的值为 <code>nil</code> 。</p>
+<p>此外 <code>AVPlayer</code> 的 <code>currentItem</code> 也提供一个相对应的错误描述属性：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 当 AVPlayerItemStatus 为 failed 状态才会有值，其余情况为 nil</span></div><div class="line">open <span class="keyword">var</span> error: <span class="type">Error</span>? &#123; <span class="keyword">get</span> &#125;</div></pre></td></tr></table></figure>
+<h4 id="3-播放控制"><a href="#3-播放控制" class="headerlink" title="3.播放控制"></a>3.播放控制</h4><ul>
+<li><strong>rate</strong> (key value observable)</li>
+</ul>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">open <span class="keyword">var</span> rate: <span class="type">Float</span></div></pre></td></tr></table></figure>
+<p><code>rate</code> 表示播放器的播放速率。</p>
+<p>当设置为 0.0 时会暂停播放，同时会使 <code>timeControlStatus</code> （iOS 10 开始提供该属性）状态变更为 <code>paused</code> 状态。设置为非0值时，如果已缓冲足够的媒体数据，会使 <code>timeControlStatus</code> 状态变更为 <code>playing</code> 。如果还没缓冲足够的数据，状态则变更为  <code>waitingToPlayAtSpecifiedRate</code> 。</p>
+<p>当调用 <code>play()</code> 方法并且可播放时 <code>rate</code> 将被设置为1.0，调用 <code>pause()</code> 将被设置为0.0。</p>
+<p>此外当全局播放状态要求暂停播放时 <code>rate</code> 将被设置为0.0。例如接收到 <code>AVAudioSession</code> 的中断通知 <code>AVAudioSessionInterruption</code> ，或者播放缓冲区为空并且<code>automaticallyWaitsToMinimizeStalling</code> 为 <code>false</code> 时。</p>
+<p>关于播放速率的更多信息可以查看 <strong>AVAudioProcessingSettings.h</strong> 。</p>
+<ul>
+<li><strong>play()</strong> and <strong>pause()</strong></li>
+</ul>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">open <span class="function"><span class="keyword">func</span> <span class="title">play</span><span class="params">()</span></span></div><div class="line">open <span class="function"><span class="keyword">func</span> <span class="title">pause</span><span class="params">()</span></span></div></pre></td></tr></table></figure>
+<p>播放与暂停，相当于将 <code>rate</code> 设置为 1.0 或 0.0。</p>
+<ul>
+<li><strong>timeControlStatus</strong> (key value observable)</li>
+</ul>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="meta">@available</span>(iOS <span class="number">10.0</span>, *)</div><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">enum</span> <span class="title">AVPlayerTimeControlStatus</span> : <span class="title">Int</span> </span>&#123;</div><div class="line">    <span class="keyword">case</span> paused</div><div class="line">    <span class="keyword">case</span> waitingToPlayAtSpecifiedRate</div><div class="line">    <span class="keyword">case</span> playing</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="meta">@available</span>(iOS <span class="number">10.0</span>, *)</div><div class="line"><span class="comment">// key value observable</span></div><div class="line">open <span class="keyword">var</span> timeControlStatus: <span class="type">AVPlayerTimeControlStatus</span> &#123; <span class="keyword">get</span> &#125;</div></pre></td></tr></table></figure>
+<p><code>timeControlStatus</code> 用于表示资源播放状态，当 <code>automaticallyWaitsToMinimizeStalling</code> 为 <code>true</code> 时该属性才有效。</p>
+<p>三种状态的表示情况：</p>
+<ul>
+<li>当处于 <code>paused</code> 状态时将会无期限暂停，直到调用 <code>play()</code> 方法或者设置 <code>rate</code> 、<code>playImmediately(atRate:)</code> 为非0值并且已经缓冲足够的数据才会继续播放。</li>
+<li>当处于 <code>playing</code> 状态时，修改 <code>rate</code> 将会立即生效，当可播放的媒体数据不足时将会变更为 <code>waitingToPlayAtSpecifiedRate</code> 状态。</li>
+<li>当处于 <code>waitingToPlayAtSpecifiedRate</code> 状态时，当前的<code>rate</code> 属性值并不是有效的，而是表示开始播放或恢复播放的速率。在等待缓冲时，可以尝试通过调用 <code>playImmediately(atRate:)</code> 开始播放任何可用的媒体数据。</li>
+</ul>
+<p>在 <code>AVPlayer</code> 内部会根据播放状态自动切换：</p>
+<ul>
+<li>当状态为 <code>playing</code> 并且播放缓冲区为空时，会切换为 <code>waitingToPlayAtSpecifiedRate</code> 状态。</li>
+<li>当状态为 <code>paused</code> 并且调用 <code>play()</code> 方法或设置 <code>rate</code> 为非0值时，会切换为 <code>waitingToPlayAtSpecifiedRate</code> 状态。</li>
+<li>当 <code>AVPlayer</code> 没有可播放的资源选项时，也即 <code>currentItem</code> 为 <code>nil</code> 时，将会设置为 <code>waitingToPlayAtSpecifiedRate</code> 状态。</li>
+<li>设置 <code>rate</code> 为0.0，或者调用 <code>pause()</code> 方法，<code>timeControlStatus</code> 将被设置为 <code>paused</code> 状态。</li>
+<li>设置 <code>rate</code> 为非0值，或者调用 <code>play()</code> 方法并且已缓冲足够媒体数据时，将会设置为 <code>playing</code> 状态。</li>
+</ul>
+<p>由于前三种情况将状态切换为 <code>waitingToPlayAtSpecifiedRate</code> 时，可以通过 <code>reasonForWaitingToPlay</code> 属性（iOS10开始提供）获取播放器等待的原因，分别对应三个字符串常量：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="meta">@available</span>(iOS <span class="number">10.0</span>, *)</div><div class="line"><span class="comment">// 当设置 automaticallyWaitsToMinimizeStalling 为 false 导致 timeControlStatus 无法变为 waitingToPlayAtSpecifiedRate 也是展示该原因</span></div><div class="line"><span class="keyword">public</span> <span class="keyword">let</span> <span class="type">AVPlayerWaitingToMinimizeStallsReason</span>: <span class="type">String</span></div><div class="line"></div><div class="line"><span class="meta">@available</span>(iOS <span class="number">10.0</span>, *)</div><div class="line"><span class="keyword">public</span> <span class="keyword">let</span> <span class="type">AVPlayerWaitingWhileEvaluatingBufferingRateReason</span>: <span class="type">String</span></div><div class="line"></div><div class="line"><span class="meta">@available</span>(iOS <span class="number">10.0</span>, *)</div><div class="line"><span class="keyword">public</span> <span class="keyword">let</span> <span class="type">AVPlayerWaitingWithNoItemToPlayReason</span>: <span class="type">String</span></div></pre></td></tr></table></figure>
+<p>其他状态下 <code>reasonForWaitingToPlay</code> 属性为 <code>nil</code>。</p>
+<h4 id="4-播放资源控制"><a href="#4-播放资源控制" class="headerlink" title="4.播放资源控制"></a>4.播放资源控制</h4><ul>
+<li><strong>currentItem</strong> </li>
+</ul>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">open <span class="keyword">var</span> currentItem: <span class="type">AVPlayerItem</span>? &#123; <span class="keyword">get</span> &#125;</div></pre></td></tr></table></figure>
+<p>表示当前播放的资源</p>
+<ul>
+<li><strong>replaceCurrentItem(with:)</strong></li>
+</ul>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">open <span class="function"><span class="keyword">func</span> <span class="title">replaceCurrentItem</span><span class="params">(with item: AVPlayerItem?)</span></span></div></pre></td></tr></table></figure>
+<p><code>AVPlayer</code> 一次只能播放一个媒体资源，可以通过这个方法替换播放器的资源。但在 iOS 10 上使用该方法替换播放资源会有点卡顿，因此还是建议直接创建一个新的播放器。</p>
+<p>此外 <code>AVFoundation</code> 框架还提供了 <code>AVPlayer</code> 的一个子类——<code>AVQueuePlayer</code> 。可以用于创建和管理需要顺序播放的资源媒体队列。</p>
+<ul>
+<li><strong>actionAtItemEnd</strong></li>
+</ul>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">enum</span> <span class="title">AVPlayerActionAtItemEnd</span> : <span class="title">Int</span> </span>&#123;</div><div class="line">    <span class="keyword">case</span> <span class="built_in">advance</span></div><div class="line">    <span class="keyword">case</span> pause</div><div class="line">    <span class="keyword">case</span> <span class="keyword">none</span></div><div class="line">&#125;</div><div class="line"></div><div class="line">open <span class="keyword">var</span> actionAtItemEnd: <span class="type">AVPlayerActionAtItemEnd</span></div></pre></td></tr></table></figure>
+<p>表示播放项目到达结束时间时该执行的动作。</p>
+<h4 id="5-播放时间控制"><a href="#5-播放时间控制" class="headerlink" title="5.播放时间控制"></a>5.播放时间控制</h4><ul>
+<li><strong>currentTime</strong></li>
+</ul>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">open <span class="function"><span class="keyword">func</span> <span class="title">currentTime</span><span class="params">()</span></span> -&gt; <span class="type">CMTime</span></div></pre></td></tr></table></figure>
+<p>表示当前播放的时长，由 <code>currentItem</code> 提供，该属性不可以通过KVO监听，如果需要监听播放时长可以通过 <code>addPeriodicTimeObserver(forInterval:queue:using:)</code> 实现。</p>
+<ul>
+<li>寻找当前播放选项的指定时间</li>
+</ul>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">open <span class="function"><span class="keyword">func</span> <span class="title">seek</span><span class="params">(to date: Date)</span></span></div><div class="line">open <span class="function"><span class="keyword">func</span> <span class="title">seek</span><span class="params">(to date: Date, completionHandler: @escaping <span class="params">(Bool)</span></span></span> -&gt; <span class="type">Swift</span>.<span class="type">Void</span>)</div><div class="line">open <span class="function"><span class="keyword">func</span> <span class="title">seek</span><span class="params">(to time: CMTime)</span></span></div><div class="line">open <span class="function"><span class="keyword">func</span> <span class="title">seek</span><span class="params">(to time: CMTime, toleranceBefore: CMTime, toleranceAfter: CMTime)</span></span></div><div class="line">open <span class="function"><span class="keyword">func</span> <span class="title">seek</span><span class="params">(to time: CMTime, completionHandler: @escaping <span class="params">(Bool)</span></span></span> -&gt; <span class="type">Swift</span>.<span class="type">Void</span>)</div><div class="line">open <span class="function"><span class="keyword">func</span> <span class="title">seek</span><span class="params">(to time: CMTime, toleranceBefore: CMTime, toleranceAfter: CMTime, completionHandler: @escaping <span class="params">(Bool)</span></span></span> -&gt; <span class="type">Swift</span>.<span class="type">Void</span>)</div></pre></td></tr></table></figure>
+<p>可以通过这些方法设置在资源的指定时间点开始播放，例如：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> newValue = <span class="type">Double</span>(slider.value)</div><div class="line"><span class="keyword">let</span> newTime = <span class="type">CMTimeMakeWithSeconds</span>(newValue, <span class="number">1</span>)</div><div class="line">player.seek(to: newTime, toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero)</div></pre></td></tr></table></figure>
+<p><code>completionHandler</code> 中，任何尚在进行中的任何寻求请求的完成处理程序将立即被调用，其中完成的参数设置为<code>false</code>。 如果新的请求完成而不被另一个寻求请求或任何其他操作中断，则将使用已完成的参数设置为<code>true</code>来调用指定的安装者。</p>
+<p>The completion handler for any prior seek request that is still in process will be invoked immediately with the finished parameter  set to NO. If the new request completes without being interrupted by another seek request or by any other operation the specified  andler will be invoked with the finished parameter set to YES. </p>
+<h4 id="6-播放时间状态观察"><a href="#6-播放时间状态观察" class="headerlink" title="6.播放时间状态观察"></a>6.播放时间状态观察</h4><p>通过KVO可以观察一些状态属性的变化，但不适合持续变化的状态，例如当前播放时间等。<code>AVPlayer</code> 提供两个方法在时长变化时回调外部进行处理以及更新用户界面。</p>
+<ul>
+<li><strong>addPeriodicTimeObserver(forInterval:queue:using:)</strong></li>
+</ul>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">open <span class="function"><span class="keyword">func</span> <span class="title">addPeriodicTimeObserver</span><span class="params">(forInterval interval: CMTime, queue: DispatchQueue?, using block: @escaping <span class="params">(CMTime)</span></span></span> -&gt; <span class="type">Swift</span>.<span class="type">Void</span>) -&gt; <span class="type">Any</span></div></pre></td></tr></table></figure>
+<p>该方法将会以指定的时间间隔周期性的调用 block，当播放时间跳动，或者播放开始以及结束时 block也会被调用。该方法会返回一个观察者对象，这个对象可供 <code>removeTimeObserver(_:)</code> 方法使用。因此必须保留这个观察对象以便移除观察者。</p>
+<p>queue 参数必须使用串行队列，当传入空时将使用主队列。如果传入并发队列将会导致方法异常。</p>
+<ul>
+<li><strong>addBoundaryTimeObserver(forTimes:queue:using:)</strong></li>
+</ul>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">open <span class="function"><span class="keyword">func</span> <span class="title">addBoundaryTimeObserver</span><span class="params">(forTimes times: [NSValue], queue: DispatchQueue?, using block: @escaping <span class="params">()</span></span></span> -&gt; <span class="type">Swift</span>.<span class="type">Void</span>) -&gt; <span class="type">Any</span></div></pre></td></tr></table></figure>
+<p>与 <code>addPeriodicTimeObserver(forInterval:queue:using:)</code> 类似，只不过 forTimes 参数需要传入的是播放期间的指定时间点（例如指定播放到3秒时回调）。</p>
+<ul>
+<li><strong>removeTimeObserver(_:)</strong> </li>
+</ul>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">open <span class="function"><span class="keyword">func</span> <span class="title">removeTimeObserver</span><span class="params">(<span class="number">_</span> observer: Any)</span></span></div></pre></td></tr></table></figure>
+<p>用于移除时间观察者。添加时间观察者和移除时间观察者的方法必须成对出现，否则会出现异常。</p>
+<h2 id="AVPlayerLayer"><a href="#AVPlayerLayer" class="headerlink" title="AVPlayerLayer"></a>AVPlayerLayer</h2><p><code>AVPlayer</code> 和 <code>AVPlayerItem</code> 并不直接提供展示视频的用户界面。如果需要在屏幕上显示视频可以使用 <code>AVKit</code> 中的 <code>AVPlayerViewController</code> 类（macOS 可以使用 <code>AVPlayerView</code> 类），或者使用 <code>AVPlayerLayer</code> 自定义展示界面。</p>
+<p><code>AVPlayerLayer</code> 继承自 <code>CALayer</code> ，与 <code>AVPlayerViewController</code> 和 <code>AVPlayerView</code> 不同，该图层仅展示可视内容，不额外提供任何播放控件。因此需要手动添加播放控制的控件，虽然比较麻烦但也极具灵活性。</p>
+<p>需要展示视频内容时，只需要设置 <code>player</code> 属性即可，例如：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> player = <span class="type">AVPlayer</span>(url: url)</div><div class="line"><span class="keyword">let</span> playerLayer = <span class="type">AVPlayerLayer</span>(player: player)</div><div class="line">view.layer.addSublayer(playerLayer)</div><div class="line"></div><div class="line"><span class="comment">// 或者</span></div><div class="line"><span class="keyword">let</span> player = <span class="type">AVPlayer</span>(url: url)</div><div class="line"><span class="keyword">self</span>.playerLayer.player = player</div></pre></td></tr></table></figure>
+<p>如果需要适配展示内容的显示范围，可以通过以下两个属性控制：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 视频在 AVPlayerLayer 中的显示方法，包括：</span></div><div class="line"><span class="comment">// AVLayerVideoGravityResizeAspect, AVLayerVideoGravityResizeAspectFill, AVLayerVideoGravityResize</span></div><div class="line"><span class="comment">// 默认为 AVLayerVideoGravityResizeAspect</span></div><div class="line">open <span class="keyword">var</span> videoGravity: <span class="type">String</span></div><div class="line"></div><div class="line"><span class="comment">// 视频图像当前的位置和大小</span></div><div class="line">open <span class="keyword">var</span> videoRect: <span class="type">CGRect</span> &#123; <span class="keyword">get</span> &#125;</div></pre></td></tr></table></figure>
+<p>除了 <code>AVPlayerLayer</code> 提供的视觉内容外，还可以使用 <code>AVSynchronizedLayer</code> 向播放器的时序同步呈现动画内容。 这是一个特殊的 Core Animation CALayer 子类，用于将当前播放器的时序赋予它的图层子树。 可以使用 <code>AVSynchronizedLayer</code> 在Core Animation中构建自定义效果，例如动画或视频转换，并使其与播放器当前的 <code>AVPlayerItem</code> 同步播放。</p>
+<h2 id="AVPlayerItem"><a href="#AVPlayerItem" class="headerlink" title="AVPlayerItem"></a>AVPlayerItem</h2><p><code>AVAsset</code> 及其子类负责提供媒体资源静态方面的数据，而 <code>AVPlayerItem</code> 将其组装为可供 <code>AVPlayer</code> 播放的动态资源，并提供可观察（key value observable）的状态。键值观察的所有播放状态改变的通知都由关联的 <code>AVPlayer</code> 的同一调度队列中发送，这个调度队列默认为 主线程队列。</p>
+<h3 id="AVPlayerItem-常用属性与方法"><a href="#AVPlayerItem-常用属性与方法" class="headerlink" title="AVPlayerItem 常用属性与方法"></a>AVPlayerItem 常用属性与方法</h3><p>对比 <code>AVPlayer</code> 就会发现这两个类有不少属性都非常相似，其实这正式因为 <code>AVPlayer</code> 需要 <code>AVPlayerItem</code> 提供可播放动态资源数据所导致的，<code>AVPlayer</code> 不少属性的状态变化都是通过 <code>AVPlayerItem</code> 的属性变化来传递。</p>
+<h4 id="1-初始化方法-1"><a href="#1-初始化方法-1" class="headerlink" title="1.初始化方法"></a>1.初始化方法</h4><p>可以通过 <code>URL</code> 或者 <code>AVAsset</code> 实例化 <code>AVPlayerItem</code> ，可以是本地资源也可以是网络资源。</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="keyword">convenience</span> <span class="keyword">init</span>(url <span class="type">URL</span>: <span class="type">URL</span>)</div><div class="line"><span class="keyword">public</span> <span class="keyword">convenience</span> <span class="keyword">init</span>(asset: <span class="type">AVAsset</span>)</div><div class="line"><span class="keyword">public</span> <span class="keyword">init</span>(asset: <span class="type">AVAsset</span>, automaticallyLoadedAssetKeys: [<span class="type">String</span>]?)</div></pre></td></tr></table></figure>
+<p><code>init(asset:automaticallyLoadedAssetKeys:)</code> 的 <code>automaticallyLoadedAssetKeys</code> 参数表示 <code>AVAsset</code> 头文件所定义的属性的 key。在 <code>status</code> 变为 <code>AVPlayerItemStatusReadyToPlay</code> 之前，底层的 <code>AVAsset</code> 将自动加载参数所提供的所有 key 对应的属性值 </p>
+<p><code>init(url:)</code> 相当于通过 <code>AVAsset(url:)</code> 创建一个 <code>AVAsset</code> 对象并调用 <code>init(asset:)</code> 初始化方法。</p>
+<p><code>init(asset:)</code> 相当于调用 <code>init(asset:automaticallyLoadedAssetKeys:)</code>初始化方法，并将 <code>[&quot;duration&quot;]</code> 作为自动加载的属性传入到 <code>automaticallyLoadedAssetKeys</code> 参数中</p>
+<h4 id="2-基本属性-1"><a href="#2-基本属性-1" class="headerlink" title="2.基本属性"></a>2.基本属性</h4><ul>
+<li><strong>status</strong> (key value observable)，<strong>error</strong></li>
+</ul>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">enum</span> <span class="title">AVPlayerItemStatus</span> : <span class="title">Int</span> </span>&#123;</div><div class="line">    <span class="keyword">case</span> unknown     <span class="comment">// 表示未知的播放选项状态，因为还没有尝试加载新的媒体资源</span></div><div class="line">    <span class="keyword">case</span> readyToPlay <span class="comment">// 表示播放选项已经准备好可播放资源</span></div><div class="line">    <span class="keyword">case</span> failed      <span class="comment">// 表示播放选项的资源加载错误而导致无法播放</span></div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// key value observable</span></div><div class="line">open <span class="keyword">var</span> status: <span class="type">AVPlayerStatus</span> &#123; <span class="keyword">get</span> &#125;</div><div class="line"></div><div class="line">open <span class="keyword">var</span> error: <span class="type">Error</span>? &#123; <span class="keyword">get</span> &#125;</div></pre></td></tr></table></figure>
+<p>参照上面 <code>AVPlayer</code> 的 <code>status</code> 和 <code>error</code> 属性，几乎一模一样。</p>
+<h4 id="4-播放时间控制"><a href="#4-播放时间控制" class="headerlink" title="4.播放时间控制"></a>4.播放时间控制</h4><p>任何尚在进行中的任何寻求请求的完成处理程序将立即被调用，其中完成的参数设置为NO。 如果新的请求完成而不被另一个查询请求或任何其他操作中断，则将使用完成的参数设置为YES来调用指定的完成处理程序。 如果查找时间超出了seekableTimeRanges属性所示的可寻求时间范围，则seek请求将被取消，并且完成处理程序将被调用，其中完成的参数设置为NO。</p>
+<p>The completion handler for any prior seek request that is still in process will be invoked immediately with the finished parameter  set to NO. If the new request completes without being interrupted by another seek request or by any other operation the specified  completion handler will be invoked with the finished parameter set to YES.  If the seek time is outside of seekable time ranges as indicated by seekableTimeRanges property, the seek request will be cancelled and the completion handler will be invoked with the finished parameter set to NO.</p>
+<h3 id="AVPlayerItem-通知"><a href="#AVPlayerItem-通知" class="headerlink" title="AVPlayerItem 通知"></a>AVPlayerItem 通知</h3>
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/AVFoundation/" rel="tag"># AVFoundation</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/04/15/AVFAudio-录音/" rel="next" title="AVFAudio-录音">
+                <i class="fa fa-chevron-left"></i> AVFAudio-录音
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/07/02/线程安全/" rel="prev" title="线程安全">
+                线程安全 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+          
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/icon.JPG"
+               alt="Lee" />
+          <p class="site-author-name" itemprop="name">Lee</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+        
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">10</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">4</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">8</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/arKenLee" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#介绍"><span class="nav-number">1.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AVPlayer"><span class="nav-number">2.</span> <span class="nav-text">AVPlayer</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#AVPlayer-常用属性与方法"><span class="nav-number">2.1.</span> <span class="nav-text">AVPlayer 常用属性与方法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-初始化方法"><span class="nav-number">2.1.1.</span> <span class="nav-text">1.初始化方法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-基本属性"><span class="nav-number">2.1.2.</span> <span class="nav-text">2.基本属性</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-播放控制"><span class="nav-number">2.1.3.</span> <span class="nav-text">3.播放控制</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-播放资源控制"><span class="nav-number">2.1.4.</span> <span class="nav-text">4.播放资源控制</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-播放时间控制"><span class="nav-number">2.1.5.</span> <span class="nav-text">5.播放时间控制</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#6-播放时间状态观察"><span class="nav-number">2.1.6.</span> <span class="nav-text">6.播放时间状态观察</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AVPlayerLayer"><span class="nav-number">3.</span> <span class="nav-text">AVPlayerLayer</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AVPlayerItem"><span class="nav-number">4.</span> <span class="nav-text">AVPlayerItem</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#AVPlayerItem-常用属性与方法"><span class="nav-number">4.1.</span> <span class="nav-text">AVPlayerItem 常用属性与方法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-初始化方法-1"><span class="nav-number">4.1.1.</span> <span class="nav-text">1.初始化方法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-基本属性-1"><span class="nav-number">4.1.2.</span> <span class="nav-text">2.基本属性</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-播放时间控制"><span class="nav-number">4.1.3.</span> <span class="nav-text">4.播放时间控制</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#AVPlayerItem-通知"><span class="nav-number">4.2.</span> <span class="nav-text">AVPlayerItem 通知</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Lee</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Muse
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+</body>
+</html>

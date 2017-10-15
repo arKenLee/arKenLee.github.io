@@ -114,7 +114,7 @@ AVFAudio在 AVFoundation 中有一个子框架 AVFAudio ，包括了 iOS 音">
 <meta property="og:image" content="https://arKenLee.github.io/2017/04/04/AVFAudio-iOS音频播放/aspg_intro.png">
 <meta property="og:image" content="https://arKenLee.github.io/2017/04/04/AVFAudio-iOS音频播放/background_modes.png">
 <meta property="og:image" content="https://arKenLee.github.io/2017/04/04/AVFAudio-iOS音频播放/audio_route_change.png">
-<meta property="og:updated_time" content="2017-07-02T05:18:07.000Z">
+<meta property="og:updated_time" content="2017-08-25T14:48:47.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="AVFAudio-iOS音频播放">
 <meta name="twitter:description" content="介绍iOS 主要提供了以下几种方式来播放音频：
@@ -638,6 +638,9 @@ AVFAudio在 AVFoundation 中有一个子框架 AVFAudio ，包括了 iOS 音">
 <figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> timer = <span class="type">Timer</span>(timeInterval: <span class="number">0.1</span>, target: <span class="keyword">self</span>, selector: #selector(updatePlayProgress), userInfo: <span class="literal">nil</span>, repeats: <span class="literal">true</span>)</div><div class="line"><span class="type">RunLoop</span>.current.add(timer, forMode: .commonModes)</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">updatePlayProgress</span><span class="params">()</span></span> &#123;</div><div class="line">    progressSlider.value = <span class="type">Float</span>(audioPlayer.currentTime)</div><div class="line">    </div><div class="line">    <span class="keyword">if</span> audioPlayer.isMeteringEnabled &#123;</div><div class="line">        <span class="comment">// 必须先刷新仪表数据</span></div><div class="line">        audioPlayer.updateMeters()</div><div class="line">        </div><div class="line">        <span class="keyword">let</span> peakPower = audioPlayer.peakPower(forChannel: <span class="number">0</span>)</div><div class="line">        <span class="keyword">let</span> averagePower = audioPlayer.averagePower(forChannel: <span class="number">0</span>)</div><div class="line">        </div><div class="line">        <span class="comment">// ....</span></div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
 <h4 id="AVAudioPlayerDelegate"><a href="#AVAudioPlayerDelegate" class="headerlink" title="AVAudioPlayerDelegate"></a>AVAudioPlayerDelegate</h4><p>通过代理方法可以获取音频播放完毕或解码失败的回调方法</p>
 <figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 音频播放完毕，如果 player.numberOfLoops 不为0，音频播放完毕时不会调用该方法</span></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">audioPlayerDidFinishPlaying</span><span class="params">(<span class="number">_</span> player: AVAudioPlayer, successfully flag: Bool)</span></span> &#123;</div><div class="line">    <span class="keyword">switch</span> currentLoopMode &#123;</div><div class="line">    <span class="keyword">case</span> .singleLoop:</div><div class="line">        <span class="comment">// 如果单曲循环回调该方法，那么说明 player 的 numberOfLoops 已经为0，可以重新设置该属性</span></div><div class="line">        player.numberOfLoops = <span class="type">NSIntegerMax</span></div><div class="line">        startPlay(index: currentTrackIndex)</div><div class="line">    <span class="keyword">default</span>:</div><div class="line">        playNextAudio()</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// 解码失败</span></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">audioPlayerDecodeErrorDidOccur</span><span class="params">(<span class="number">_</span> player: AVAudioPlayer, error: Error?)</span></span> &#123;</div><div class="line">    <span class="built_in">print</span>(<span class="string">"audio player decode error: <span class="subst">\(error?.localizedDescription ?? "unknown")</span>"</span>)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>特别需要注意的是，<code>AVAudioPlayer</code> 的 <code>delegate</code> 属性是不安全的无主引用，在 OC 中体现为 <code>assign</code> 修饰符：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// swift</span></div><div class="line"><span class="keyword">unowned</span>(unsafe) open <span class="keyword">var</span> delegate: <span class="type">AVAudioPlayerDelegate</span>?</div><div class="line"></div><div class="line"><span class="comment">// OC</span></div><div class="line">@property(assign, nullable) id&lt;<span class="type">AVAudioPlayerDelegate</span>&gt; delegate;</div></pre></td></tr></table></figure>
+<p>因此当播放器的代理对象销毁时，尽量把 <code>delegate</code> 设置为 <code>nil</code>，以免造成野指针崩溃。</p>
 <blockquote>
 <p>AVAudioPlayer 不支持流式播放，如果想要实现边播边存的流式播放，可以使用 AVPlayer + AVURLAsset + 自定义AVAssetResourceLoader，将下载的数据通过 AVAssetResourceLoaderDelegate 和 AVPlayer 按需加载</p>
 <p>还有一种方法是使用音频队列服务，通过 Audio File Stream Services（AudioToolbox/AudioFileStream.h） 将网络数据包解析成音频包，最后通过 Audio Queue Services（AudioToolbox/AudioQueue.h）进行播放。</p>
@@ -854,7 +857,7 @@ AVFAudio在 AVFoundation 中有一个子框架 AVFAudio ，包括了 iOS 音">
           
             <div class="site-state-item site-state-posts">
               <a href="/archives">
-                <span class="site-state-item-count">8</span>
+                <span class="site-state-item-count">10</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -863,7 +866,7 @@ AVFAudio在 AVFoundation 中有一个子框架 AVFAudio ，包括了 iOS 音">
           
             <div class="site-state-item site-state-categories">
               
-                <span class="site-state-item-count">3</span>
+                <span class="site-state-item-count">4</span>
                 <span class="site-state-item-name">分类</span>
               
             </div>
@@ -872,7 +875,7 @@ AVFAudio在 AVFoundation 中有一个子框架 AVFAudio ，包括了 iOS 音">
           
             <div class="site-state-item site-state-tags">
               <a href="/tags">
-                <span class="site-state-item-count">10</span>
+                <span class="site-state-item-count">8</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>

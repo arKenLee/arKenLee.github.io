@@ -1,0 +1,820 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="iOS 11,iPhone X," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0" />
+
+
+
+
+
+
+<meta name="description" content="iPhone XiPhone X 的变化iPhone X 相比于以往发布的手机在屏幕尺寸和分辨率都发生了很大的变化，它搭载的屏幕是一块全屏的超视网膜显示屏，四周留下圆角，顶部则是一块内嵌各种传感器的凹槽，底部的虚拟Home键指示器替代了物理的Home键。全屏幕的展示提供了更棒的沉浸式体验空间。
+iPhone X 的屏幕尺寸为 5.8 英寸，宽度与 4.7 英寸的手机相同为 375pt，高度则为 8">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Designing for iPhone X and iOS 11">
+<meta property="og:url" content="https://arKenLee.github.io/2017/09/24/Designing for iPhone X and iOS 11/index.html">
+<meta property="og:site_name" content="Ken’s Notes">
+<meta property="og:description" content="iPhone XiPhone X 的变化iPhone X 相比于以往发布的手机在屏幕尺寸和分辨率都发生了很大的变化，它搭载的屏幕是一块全屏的超视网膜显示屏，四周留下圆角，顶部则是一块内嵌各种传感器的凹槽，底部的虚拟Home键指示器替代了物理的Home键。全屏幕的展示提供了更棒的沉浸式体验空间。
+iPhone X 的屏幕尺寸为 5.8 英寸，宽度与 4.7 英寸的手机相同为 375pt，高度则为 8">
+<meta property="og:image" content="https://arKenLee.github.io/2017/09/24/Designing%20for%20iPhone%20X%20and%20iOS%2011/iPhone_X_screen_size.png">
+<meta property="og:image" content="https://arKenLee.github.io/2017/09/24/Designing%20for%20iPhone%20X%20and%20iOS%2011/iPhone_X_safe_layout.png">
+<meta property="og:image" content="https://arKenLee.github.io/2017/09/24/Designing%20for%20iPhone%20X%20and%20iOS%2011/iPhone_X_layout1.png">
+<meta property="og:image" content="https://arKenLee.github.io/2017/09/24/Designing%20for%20iPhone%20X%20and%20iOS%2011/iPhone_X_layout2.png">
+<meta property="og:image" content="https://arKenLee.github.io/2017/09/24/Designing%20for%20iPhone%20X%20and%20iOS%2011/contrast_safe_area.png">
+<meta property="og:image" content="https://arKenLee.github.io/2017/09/24/Designing%20for%20iPhone%20X%20and%20iOS%2011/iPhone_8_safe_area.png">
+<meta property="og:image" content="https://arKenLee.github.io/2017/09/24/Designing%20for%20iPhone%20X%20and%20iOS%2011/iPhone_X_safe_area2.png">
+<meta property="og:image" content="https://arKenLee.github.io/2017/09/24/Designing%20for%20iPhone%20X%20and%20iOS%2011/safe_area_layout.png">
+<meta property="og:image" content="https://arKenLee.github.io/2017/09/24/Designing%20for%20iPhone%20X%20and%20iOS%2011/iPhone_X_tableview1.png">
+<meta property="og:image" content="https://arKenLee.github.io/2017/09/24/Designing%20for%20iPhone%20X%20and%20iOS%2011/iPhone_X_tableview2.png">
+<meta property="og:image" content="https://arKenLee.github.io/2017/09/24/Designing%20for%20iPhone%20X%20and%20iOS%2011/tableview_safe_area1.png">
+<meta property="og:image" content="https://arKenLee.github.io/2017/09/24/Designing%20for%20iPhone%20X%20and%20iOS%2011/tableview_safe_area2.png">
+<meta property="og:image" content="https://arKenLee.github.io/2017/09/24/Designing%20for%20iPhone%20X%20and%20iOS%2011/iPhone_X_safe_area3.png">
+<meta property="og:updated_time" content="2017-10-15T17:01:49.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Designing for iPhone X and iOS 11">
+<meta name="twitter:description" content="iPhone XiPhone X 的变化iPhone X 相比于以往发布的手机在屏幕尺寸和分辨率都发生了很大的变化，它搭载的屏幕是一块全屏的超视网膜显示屏，四周留下圆角，顶部则是一块内嵌各种传感器的凹槽，底部的虚拟Home键指示器替代了物理的Home键。全屏幕的展示提供了更棒的沉浸式体验空间。
+iPhone X 的屏幕尺寸为 5.8 英寸，宽度与 4.7 英寸的手机相同为 375pt，高度则为 8">
+<meta name="twitter:image" content="https://arKenLee.github.io/2017/09/24/Designing%20for%20iPhone%20X%20and%20iOS%2011/iPhone_X_screen_size.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://arKenLee.github.io/2017/09/24/Designing for iPhone X and iOS 11/"/>
+
+
+
+
+
+  <title> Designing for iPhone X and iOS 11 | Ken’s Notes </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Ken’s Notes</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Keep Calm and Carry On</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="https://arKenLee.github.io/2017/09/24/Designing for iPhone X and iOS 11/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Lee">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/icon.JPG">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ken’s Notes">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Designing for iPhone X and iOS 11
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-09-24T18:51:41+08:00">
+                2017-09-24
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/UI/" itemprop="url" rel="index">
+                    <span itemprop="name">UI</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="iPhone-X"><a href="#iPhone-X" class="headerlink" title="iPhone X"></a>iPhone X</h2><h3 id="iPhone-X-的变化"><a href="#iPhone-X-的变化" class="headerlink" title="iPhone X 的变化"></a>iPhone X 的变化</h3><p>iPhone X 相比于以往发布的手机在屏幕尺寸和分辨率都发生了很大的变化，它搭载的屏幕是一块全屏的超视网膜显示屏，四周留下圆角，顶部则是一块内嵌各种传感器的凹槽，底部的虚拟Home键指示器替代了物理的Home键。全屏幕的展示提供了更棒的沉浸式体验空间。</p>
+<p>iPhone X 的屏幕尺寸为 5.8 英寸，宽度与 4.7 英寸的手机相同为 375pt，高度则为 812 pt ，多出 145pt 的空间。所采取的图片倍数是 3x 图片。</p>
+<img src="/2017/09/24/Designing%20for%20iPhone%20X%20and%20iOS%2011/iPhone_X_screen_size.png" alt="iPhone X 屏幕尺寸" title="iPhone X 屏幕尺寸">
+<p>至此 iPhone 的各型号尺寸如下：</p>
+<table>
+<thead>
+<tr>
+<th>手机型号</th>
+<th>开发尺寸</th>
+<th>像素尺寸</th>
+<th>屏幕尺寸</th>
+<th>像素密度</th>
+<th>图片倍数</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>4/4S</td>
+<td>320pt × 480pt</td>
+<td>640px  × 960px</td>
+<td>3.5英寸</td>
+<td>326ppi</td>
+<td>@2x</td>
+</tr>
+<tr>
+<td>5/5S/5C</td>
+<td>320pt × 568pt</td>
+<td>640px  × 1136px</td>
+<td>4.0英寸</td>
+<td>326ppi</td>
+<td>@2x</td>
+</tr>
+<tr>
+<td>6/6S/7/8</td>
+<td>375pt × 667pt</td>
+<td>750px  × 1334px</td>
+<td>4.7英寸</td>
+<td>326ppi</td>
+<td>@2x</td>
+</tr>
+<tr>
+<td>6+/6S+/7+/8</td>
+<td>414pt × 736pt</td>
+<td>1242px × 2208px</td>
+<td>5.5英寸</td>
+<td>401ppi</td>
+<td>@3x</td>
+</tr>
+<tr>
+<td>X</td>
+<td>375pt × 812pt</td>
+<td>1125px × 2436px</td>
+<td>5.8英寸</td>
+<td>458ppi</td>
+<td>@3x</td>
+</tr>
+</tbody>
+</table>
+<h3 id="iPhone-X-布局"><a href="#iPhone-X-布局" class="headerlink" title="iPhone X 布局"></a>iPhone X 布局</h3><p>在设计 iPhone X 的 UI 时必须确保布局填充屏幕，并且不会被设备的四个圆角以及传感器凹槽、Home键指示器所遮盖。</p>
+<img src="/2017/09/24/Designing%20for%20iPhone%20X%20and%20iOS%2011/iPhone_X_safe_layout.png" alt="填充屏幕" title="填充屏幕">
+<img src="/2017/09/24/Designing%20for%20iPhone%20X%20and%20iOS%2011/iPhone_X_layout1.png" alt="填充屏幕" title="填充屏幕">
+<img src="/2017/09/24/Designing%20for%20iPhone%20X%20and%20iOS%2011/iPhone_X_layout2.png" alt="不要被系统元素遮盖" title="不要被系统元素遮盖">
+<p>相比于其他手机，iPhone X 在竖屏的情况下状态栏是 44pt，比传感器凹槽的高度略高一点。底部的 Home 键指示器区域为 34pt，比指示器高度略高。横屏时状态栏是 20pt，Home 键指示器区域为21pt。</p>
+<h4 id="Safe-Area"><a href="#Safe-Area" class="headerlink" title="Safe Area"></a>Safe Area</h4><p>在 iOS 11 中，苹果引入了一个 <strong>Safe Area</strong> 的概念，即不会被系统元素遮挡的UI安全区域。下面是 iPhone 8 屏幕（4.7英寸）和 iPhone X 屏幕的安全区域对比：</p>
+<img src="/2017/09/24/Designing%20for%20iPhone%20X%20and%20iOS%2011/contrast_safe_area.png" alt="安全区域对比" title="安全区域对比">
+<img src="/2017/09/24/Designing%20for%20iPhone%20X%20and%20iOS%2011/iPhone_8_safe_area.png" alt="iPhone 8 竖屏安全区域" title="iPhone 8 竖屏安全区域">
+
+<img src="/2017/09/24/Designing%20for%20iPhone%20X%20and%20iOS%2011/iPhone_X_safe_area2.png" alt="iPhone X 横屏安全区域" title="iPhone X 横屏安全区域">
+<p>如果是使用系统提供的 UI 元素（例如 <code>UINavigationBar</code>、<code>UITabBar</code>、<code>UITableView</code> 等）会自动适应 iPhone X 的外形。如果是使用自定义的 UI 元素，那么需要自己适配，特别是如果之前隐藏了状态栏的界面，苹果建议在 iPhone X 上最好还是显示状态栏，除非是全屏展示图片或视频以及游戏等。</p>
+<img src="/2017/09/24/Designing%20for%20iPhone%20X%20and%20iOS%2011/safe_area_layout.png" alt="自动调整布局" title="自动调整布局">
+<h4 id="UIScrollView"><a href="#UIScrollView" class="headerlink" title="UIScrollView"></a>UIScrollView</h4><p>如果你的 <code>UIScrollView</code> 及其子类（例如：<code>UITableView</code> 等），虽然虚拟 Home 键指示器可能会遮挡视图的内容，但因为可以上下滚动因此苹果建议这种滚动的视图在可以贴合底部布局而不是被限制在 Safe Area 中，只要底部的边距预留足够的空间（<em>下面会介绍利用 <code>UIScrollView</code> 在 iOS 11 新增的属性适配内容视图</em>）。</p>
+<img src="/2017/09/24/Designing%20for%20iPhone%20X%20and%20iOS%2011/iPhone_X_tableview1.png" alt="UITableView" title="UITableView">
+<img src="/2017/09/24/Designing%20for%20iPhone%20X%20and%20iOS%2011/iPhone_X_tableview2.png" alt="UITableView" title="UITableView">
+<h4 id="UITableView"><a href="#UITableView" class="headerlink" title="UITableView"></a>UITableView</h4><p>在 iPhone X 中，<code>UITableViewCell.contentView</code> 默认会被嵌到 Safe Area 中，如果布局是相对于 <code>contentView</code> 来布局，那么内容将会自适应而不用单独适配 iPhone X 尺寸。如果 <code>contentView</code>  没有开启 insert to safe area，那么 contentView 就会铺满屏幕，但可以通过 <code>layoutMargins</code> 来适配（<code>insetsLayoutMarginsFromSafeArea</code> 需要设置为 <code>true</code>，该属性默认值为 <code>true</code>）。</p>
+<img src="/2017/09/24/Designing%20for%20iPhone%20X%20and%20iOS%2011/tableview_safe_area1.png" alt="UITableView" title="UITableView">
+<img src="/2017/09/24/Designing%20for%20iPhone%20X%20and%20iOS%2011/tableview_safe_area2.png" alt="UITableView" title="UITableView">
+<h3 id="虚拟-Home-键指示器"><a href="#虚拟-Home-键指示器" class="headerlink" title="虚拟 Home 键指示器"></a>虚拟 Home 键指示器</h3><p>在 iPhone X 上取消了物理 Home 键，取而代之的是底部一条虚拟 Home 键指示器，用户通过向上滑动指示器来回到主屏幕和切换App，因此在布局时尽量不要将控件放置在 Home 键指示器附近。</p>
+<img src="/2017/09/24/Designing%20for%20iPhone%20X%20and%20iOS%2011/iPhone_X_safe_area3.png" alt="在安全区域内放置控件" title="在安全区域内放置控件">
+<p>iOS 会动态调整 Home 键指示器的外观颜色，保持与背景之间有效的对比。但只有黑色和白色两种颜色，无法自定义。</p>
+<p>苹果允许通过 <code>UIViewController</code> 的 <code>setNeedsUpdateOfHomeIndicatorAutoHidden</code> 方法来自动隐藏 Home 键指示器。</p>
+<p>通过重载<code>UIViewController</code> 的 <code>prefersHomeIndicatorAutoHidden</code> 方法，可以让用户在没有触摸屏幕几秒后自动隐藏 Home 键指示器，用户需要再次触摸才会重新出现。</p>
+<p>通过这些方法可以在全屏展示内容时为用户提供更好的交互体验。例如在设计全屏幕展示的视频播放界面时，可以先隐藏指示器，等到用户触摸屏幕时再出现。</p>
+<p>如果App有类似于底部上滑，或者是顶部下滑的交互功能，可以通过重载 <code>UIViewController</code> 的 <code>preferredScreenEdgesDeferringSystemGestures</code> 方法来推迟系统（通知中心和控制中心）的手势识别。可以让用户在第二次操作时才会触发系统的手势。</p>
+<h3 id="Launch-Screen"><a href="#Launch-Screen" class="headerlink" title="Launch Screen"></a>Launch Screen</h3><p>如果 App 的启动屏是通过 Launch Image Source 来提供的，并且在没有提供 1125px * 2436px 的启动图的情况下，那么在 iPhone X 上的界面就会在顶部和底部留下黑边而不是充满整个屏幕。</p>
+<p>如果不想留下黑色区域，请配置 1125px * 2436px 的启动图或者使用 Launch Screen.storyboard。</p>
+<h2 id="iOS-11"><a href="#iOS-11" class="headerlink" title="iOS 11"></a>iOS 11</h2><h3 id="Safe-Area-Layout-Guide"><a href="#Safe-Area-Layout-Guide" class="headerlink" title="Safe Area Layout Guide"></a>Safe Area Layout Guide</h3><p>如果没有通过 safeAreaLayoutGudie 布局，那么可以尝试使用 <code>layoutMargins</code> 属性。</p>
+<h3 id="关于-UIScrollView"><a href="#关于-UIScrollView" class="headerlink" title="关于 UIScrollView"></a>关于 UIScrollView</h3><p>在 iOS 11 中 <code>UIScrollView</code> 增加了几个属性，以帮助有效的适配内容布局。</p>
+<p>adjustedContentInset</p>
+<p>contentInsetAdjustmentBehavior</p>
+<p>contentLayoutGuide</p>
+<p>frameLayoutGuide</p>
+<h3 id="关于导航栏"><a href="#关于导航栏" class="headerlink" title="关于导航栏"></a>关于导航栏</h3><p>UINavigationItem  LargeTitleDisplayMode largeTitleDisplayMode</p>
+<h3 id="关于搜索栏"><a href="#关于搜索栏" class="headerlink" title="关于搜索栏"></a>关于搜索栏</h3><h4 id="1-在导航栏中的搜索控制器"><a href="#1-在导航栏中的搜索控制器" class="headerlink" title="1.在导航栏中的搜索控制器"></a>1.在导航栏中的搜索控制器</h4><p>在 iOS 11 中，导航栏上的搜索控制器不再是以 present 形式展示，而是直接设置给 <code>self.navigationItem.searchController</code> 。</p>
+<p>将搜索控制器的 <code>isActive</code> 属性设置为 <code>true</code> 可以激活搜索控制器并开始编辑。</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">fileprivate <span class="function"><span class="keyword">func</span> <span class="title">presentSearchController</span><span class="params">(initialSearchText searchText: String? = <span class="literal">nil</span>)</span></span> &#123;</div><div class="line">    <span class="keyword">let</span> searchController = <span class="type">UISearchController</span>(searchResultsController: <span class="literal">nil</span>)</div><div class="line">    searchController.searchResultsUpdater = <span class="keyword">self</span></div><div class="line">    searchController.obscuresBackgroundDuringPresentation = <span class="literal">false</span></div><div class="line">    searchController.searchBar.text = searchText</div><div class="line">  </div><div class="line">    <span class="keyword">if</span> #available(iOS <span class="number">11.0</span>, *) &#123;</div><div class="line">        <span class="keyword">self</span>.navigationItem.searchController = searchController</div><div class="line">        searchController.isActive = <span class="literal">true</span></div><div class="line">    &#125; <span class="keyword">else</span> &#123;</div><div class="line">        present(searchController, animated: <span class="literal">true</span>, completion: <span class="literal">nil</span>)</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>可以通过 <code>hidesSearchBarWhenScrolling</code> 属性控制用户在滑动屏幕时自动隐藏搜索栏</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 滚动视图时是否自动隐藏搜索栏，默认为 true</span></div><div class="line">open <span class="keyword">var</span> hidesSearchBarWhenScrolling: <span class="type">Bool</span></div></pre></td></tr></table></figure>
+<h4 id="2-UITableView中的搜索控制器"><a href="#2-UITableView中的搜索控制器" class="headerlink" title="2.UITableView中的搜索控制器"></a>2.UITableView中的搜索控制器</h4><p>在 iOS 11 中，设置在 <code>UITableView.tableHeaderView</code>  的搜索栏也可以集成到导航栏中，作为视图控制器的导航项。</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">fileprivate <span class="function"><span class="keyword">func</span> <span class="title">showSearchBar</span><span class="params">(showSearchBar: Bool)</span></span> &#123;</div><div class="line">    <span class="keyword">if</span> #available(iOS <span class="number">11.0</span>, *) &#123;</div><div class="line">        <span class="keyword">self</span>.navigationItem.searchController = <span class="keyword">self</span>.searchController</div><div class="line">        <span class="keyword">self</span>.searchController.isActive = showSearchBar</div><div class="line">    &#125; <span class="keyword">else</span> &#123;</div><div class="line">        <span class="keyword">if</span> showSearchBar &#123;</div><div class="line">            <span class="keyword">self</span>.tableView.tableHeaderView = <span class="keyword">self</span>.searchController.searchBar</div><div class="line">        &#125; <span class="keyword">else</span> &#123;</div><div class="line">            <span class="keyword">self</span>.tableView.tableHeaderView = <span class="literal">nil</span></div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://developer.apple.com/videos/play/fall2017/801/" target="_blank" rel="external">[1] Designing for iPhone X</a></p>
+<p><a href="https://developer.apple.com/videos/play/fall2017/201" target="_blank" rel="external">[2] Building Apps for iPhone X</a></p>
+<p><a href="https://developer.apple.com/videos/play/wwdc2017/412" target="_blank" rel="external">[3] Auto Layout Techniques in Interface Builder</a></p>
+<p><a href="https://developer.apple.com/videos/play/wwdc2017/219" target="_blank" rel="external">[4] Modern User Interaction on iOS</a></p>
+<p><a href="https://developer.apple.com/videos/play/wwdc2017/204" target="_blank" rel="external">[5] Updating Your App for iOS 11</a></p>
+<p><a href="https://developer.apple.com/ios/human-interface-guidelines/overview/iphone-x/" target="_blank" rel="external">[6] Human Interface Guidelines - iPhone X</a></p>
+<p><a href="https://developer.apple.com/library/content/documentation/UserExperience/Conceptual/AutolayoutPG/" target="_blank" rel="external">[7] Auto Layout Guide</a></p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/iOS-11/" rel="tag"># iOS 11</a>
+          
+            <a href="/tags/iPhone-X/" rel="tag"># iPhone X</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/07/24/In-App-Purchase/" rel="next" title="In-App Purchase">
+                <i class="fa fa-chevron-left"></i> In-App Purchase
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+          
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/icon.JPG"
+               alt="Lee" />
+          <p class="site-author-name" itemprop="name">Lee</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+        
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">10</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">4</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">8</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/arKenLee" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#iPhone-X"><span class="nav-number">1.</span> <span class="nav-text">iPhone X</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#iPhone-X-的变化"><span class="nav-number">1.1.</span> <span class="nav-text">iPhone X 的变化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#iPhone-X-布局"><span class="nav-number">1.2.</span> <span class="nav-text">iPhone X 布局</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Safe-Area"><span class="nav-number">1.2.1.</span> <span class="nav-text">Safe Area</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#UIScrollView"><span class="nav-number">1.2.2.</span> <span class="nav-text">UIScrollView</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#UITableView"><span class="nav-number">1.2.3.</span> <span class="nav-text">UITableView</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#虚拟-Home-键指示器"><span class="nav-number">1.3.</span> <span class="nav-text">虚拟 Home 键指示器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Launch-Screen"><span class="nav-number">1.4.</span> <span class="nav-text">Launch Screen</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#iOS-11"><span class="nav-number">2.</span> <span class="nav-text">iOS 11</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Safe-Area-Layout-Guide"><span class="nav-number">2.1.</span> <span class="nav-text">Safe Area Layout Guide</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#关于-UIScrollView"><span class="nav-number">2.2.</span> <span class="nav-text">关于 UIScrollView</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#关于导航栏"><span class="nav-number">2.3.</span> <span class="nav-text">关于导航栏</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#关于搜索栏"><span class="nav-number">2.4.</span> <span class="nav-text">关于搜索栏</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-在导航栏中的搜索控制器"><span class="nav-number">2.4.1.</span> <span class="nav-text">1.在导航栏中的搜索控制器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-UITableView中的搜索控制器"><span class="nav-number">2.4.2.</span> <span class="nav-text">2.UITableView中的搜索控制器</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">3.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Lee</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Muse
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+</body>
+</html>
